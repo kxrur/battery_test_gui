@@ -14,6 +14,7 @@ import { useBatteryManager } from '@/lib/battery.ts'
 import { invoke } from '@tauri-apps/api/tauri' // added to use the export_to_csv() from backend and invoke tauri commands
 import { appDataDir } from '@tauri-apps/api/path'// added to obtain directory path
 
+
 const batteryManager = useBatteryManager();
 
 const data = [

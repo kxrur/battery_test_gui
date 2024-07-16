@@ -20,11 +20,7 @@ use self::file::*;
 use self::pilot::*;
 use self::serial::*;
 
-// Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
-#[tauri::command]
-fn greet(name: &str) -> String {
-    format!("Hello, {}! You've been greeted from Rust!", name)
-}
+
 
 /// tauri command that calls the backend (rust) export_to_csv function
 #[tauri::command]
@@ -54,15 +50,6 @@ fn get_project_dir(steps: usize) -> Result<String, String> {
         .map(|s| s.to_string())
         .ok_or_else(|| "Failed to convert path to string.".to_string())
 }
-
-
-// For Debugging - to be removed/commented when building
-// fn get_writable_path() -> PathBuf {
-//     // Modify this as needed
-//     let mut path = PathBuf::from("C:\\Users\\zephr\\Desktop\\SC");
-//     path.push("export.csv");
-//     path
-// }
 
 fn main() {
     // Initialize the database
