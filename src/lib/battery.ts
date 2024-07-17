@@ -30,29 +30,31 @@ export interface BatteryBench {
 export function useBatteryManager() {
 	const batteries = ref<BatteryBench[]>([]);
 	
-	const batteries_voltages = computed(() => {
-		return []
-	})
+	const batteries_voltages = computed(
+		() => batteries.value.map(battery => battery.voltage)
+	)
 	
-	const batteries_temperatures = computed(() => {
-		return []
-	})
+	const batteries_temperatures = computed(
+		() => batteries.value.map(battery => battery.battery_temperature)
+	)
 	
-	const batteries_currents = computed(() => {
-		return []
-	})
+	const batteries_currents = computed(
+		() => batteries.value.map(battery => battery.current)
+	)
 	
-	const battery_benches_temperatures = computed(() => {
-		return []
-	})
+	const battery_benches_temperatures = computed(
+		() => batteries.value.map(battery => battery.temperature)
+	)
 	
-	const bench_loads_temperatures = computed(() => {
-		return []
-	})
+	const bench_loads_temperatures = computed(
+		() => batteries.value.map(battery => battery.electronic_load_temperature)
+	)
 	
 	onMounted(async () => {
 		await listen('display-battery', event => {
-			console.log('Received battery data:', event.payload);
+
+
+			console.log(event.payload.port);
 		});
 	});
 

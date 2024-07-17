@@ -22,6 +22,7 @@
 use serde::Serialize;
 use bincode;
 use std::io::{ Write , Read};
+use std::{path, string};
 use std::time::Duration;
 
 
@@ -117,11 +118,11 @@ impl Command{
 
 	}
 
-	fn send(&self){
+	fn send(&self, port: &str) -> Vec<u8>{
 
 		let data = self.encode();
 
-		let mut port = serialport::new("COM7", 115200)
+		let mut port = serialport::new(port, 115200)
     	.timeout(Duration::from_millis(10))
     	.open().expect("Failed to open port");
 
@@ -131,7 +132,8 @@ impl Command{
 		let mut serial_buf: Vec<u8> = vec![0; 32];
     	port.read(serial_buf.as_mut_slice()).expect("Found no data!");
 
-    	println!("Command: {:?}", serial_buf);
+
+		serial_buf
 	}
 
 }
@@ -166,20 +168,11 @@ mod tests {
 	fn test_encode() {
 
 
-		let encoded = vec![0xB3, 0x00, 0x05, 0xB3 ^ 0x00 ^ 0x05];
-
 		let command = Command::Ping(PingPayload{ identification : 0x05 });
 
-		command.send();
-		/* 
-		let data = vec![0x01, 0x02, 0x03];
-		let encoded = encode(&data);
-		assert_eq!(encoded, vec![0xB3, 0x01, 0x02, 0x03, 0xB3 ^ 0x01 ^ 0x02 ^ 0x03]);
+		let response = command.send("COM7");
 
-		let data = vec![0x00, 0xFF, 0x55];
-		let encoded = encode(&data);
-		assert_eq!(encoded, vec![0xB3, 0x00, 0xFF, 0x55, 0xB3 ^ 0x00 ^ 0xFF ^ 0x55]);
-		*/
+		println!("Command: {:?}", response);
 	}
 
 	#[test]
