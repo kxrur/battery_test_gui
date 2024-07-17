@@ -167,7 +167,6 @@ mod tests {
 	#[test]
 	fn test_encode() {
 
-
 		let command = Command::Ping(PingPayload{ identification : 0x05 });
 
 		let response = command.send("COM7");
