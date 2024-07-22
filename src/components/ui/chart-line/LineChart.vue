@@ -38,7 +38,7 @@ type Data = typeof props.data[number]
 const index = computed(() => props.index as KeyOfT)
 const colors = computed(() => props.colors?.length ? props.colors : defaultColors(props.categories.length))
 
-const legendItems = ref<BulletLegendItemInterface[]>(props.categories.map((category, i) => ({
+const legendItems = computed(() => props.categories.map((category, i) => ({
   name: category,
   color: colors.value[i],
   inactive: false,

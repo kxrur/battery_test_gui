@@ -15,7 +15,7 @@ export enum CompletionStatus {
 
 export interface BatteryBench {
 	id: number;
-	port: String;
+	port: string;
 	temperature: number;
 	battery_temperature: number;
 	electronic_load_temperature: number;
@@ -27,84 +27,130 @@ export interface BatteryBench {
 	end_date: Date|null;
 }
 
+type chartData = {
+	[key : string] : any,
+}
+
 export function useBatteryManager() {
-	const batteries = ref<BatteryBench[]>([]);
+	const batteries = ref<Map<string,BatteryBench[]>>( new Map<string , BatteryBench[]>);
 	
+	const open_ports = computed(
+		() => [...batteries.value].map(battery => battery[0])
+	)
+
 	const batteries_voltages = computed(
 		() => {
-			let data: Map<String, number[]> = new Map<String, number[]>()
-			batteries.value.map(battery => {
-				
-				!data.has(battery.port) && data.set(battery.port, []);
-				data.get(battery.port)?.push(battery.voltage)
 
-			});
-			
+			const data: chartData[] = [];
+
+			[...batteries.value].forEach(battery => {
+
+				for(let i=0; i < battery[1].length; i++)
+				{
+
+					if(data[i] == undefined)
+						data[i] = { 'index' : i };
+					
+					data[i][battery[0]] = battery[1][i].voltage / 100;
+				}
+			})
+
 			return data;
 		})
 	
 	const batteries_temperatures = computed(
 		() => {
-			let data: Map<String, number[]> = new Map<String, number[]>()
-			batteries.value.map(battery => {
-				
-				!data.has(battery.port) && data.set(battery.port, []);
-				data.get(battery.port)?.push(battery.battery_temperature)
 
-			});
-			
+			const data: chartData[] = [];
+
+			[...batteries.value].forEach(battery => {
+
+				for(let i=0; i < battery[1].length; i++)
+				{
+
+					if(data[i] == undefined)
+						data[i] = { 'index' : i };
+					
+					data[i][battery[0]] = battery[1][i].battery_temperature / 100;
+				}
+			})
+
 			return data;
 		})
 	
 	const batteries_currents = computed(
 		() => {
-			let data: Map<String, number[]> = new Map<String, number[]>()
-			batteries.value.map(battery => {
-				
-				!data.has(battery.port) && data.set(battery.port, []);
-				data.get(battery.port)?.push(battery.current)
 
-			});
-			
+			const data: chartData[] = [];
+
+			[...batteries.value].forEach(battery => {
+
+				for(let i=0; i < battery[1].length; i++)
+				{
+
+					if(data[i] == undefined)
+						data[i] = { 'index' : i };
+					
+					data[i][battery[0]] = battery[1][i].current / 100;
+				}
+			})
+
 			return data;
-		})
-	
+		})	
 	const battery_benches_temperatures = computed(
 		() => {
-			let data: Map<String, number[]> = new Map<String, number[]>()
-			batteries.value.map(battery => {
-				
-				!data.has(battery.port) && data.set(battery.port, []);
-				data.get(battery.port)?.push(battery.temperature)
 
-			});
-			
+			const data: chartData[] = [];
+
+			[...batteries.value].forEach(battery => {
+
+				for(let i=0; i < battery[1].length; i++)
+				{
+
+					if(data[i] == undefined)
+						data[i] = { 'index' : i };
+					
+					data[i][battery[0]] = battery[1][i].temperature / 100;
+				}
+			})
+
 			return data;
 		})
-	
 	const bench_loads_temperatures = computed(
 		() => {
-			let data: Map<String, number[]> = new Map<String, number[]>()
-			batteries.value.map(battery => {
-				
-				!data.has(battery.port) && data.set(battery.port, []);
-				data.get(battery.port)?.push(battery.electronic_load_temperature)
 
-			});
-			
+			const data: chartData[] = [];
+
+			[...batteries.value].forEach(battery => {
+
+				for(let i=0; i < battery[1].length; i++)
+				{
+
+					if(data[i] == undefined)
+						data[i] = { 'index' : i };
+					
+					data[i][battery[0]] = battery[1][i].electronic_load_temperature / 100;
+				}
+			})
+
 			return data;
 		})
-	
+
 	onMounted(async () => {
 		await listen('display-battery', event => {
 
+			const payload = event.payload as BatteryBench;
+			
+			!batteries.value?.has(payload.port) && batteries.value?.set(payload.port, []);
 
-			console.log(event.payload.port);
+			batteries.value?.get(payload.port)?.push(payload);
+
 		});
 	});
 
 	return {
 		batteries,
+		open_ports,
 		batteries_voltages,
 		batteries_currents,
 		batteries_temperatures,
