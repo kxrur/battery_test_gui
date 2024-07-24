@@ -16,6 +16,7 @@ pub enum CompletionStatus {
 	InProgress
 }
 
+
 #[derive(Debug, Serialize, Clone)]
 pub struct BatteryBench {
 	pub id: u8,
@@ -46,5 +47,30 @@ impl BatteryBench {
 	
 	pub fn complete_sequence(&mut self) {
 		todo!()
+	}
+}
+
+
+#[derive(Debug)]
+pub struct Port{
+	addr : String,
+	state : PortStatus,
+}	
+
+#[derive(Debug)]
+pub enum PortStatus {
+	Pinged,
+	NoResponse,
+	Unpinged,
+}
+
+
+impl Port {
+	pub fn init() -> Vec<String> {
+
+		todo!()	
+		//Spawn a thread that checks for open ports to ping and 
+		//check if they are battery testers
+
 	}
 }

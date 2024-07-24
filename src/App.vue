@@ -16,6 +16,7 @@ import { invoke } from '@tauri-apps/api/tauri' // added to use the export_to_csv
 
 const batteryManager = useBatteryManager();
 
+const batteries = batteryManager.latest_data;
 const open_ports = batteryManager.open_ports;
 const voltages = batteryManager.batteries_voltages;
 const currents = batteryManager.batteries_currents;
@@ -42,15 +43,15 @@ async function exportToCSV() {
 </script>
 
 <template>
-  <section class="m-10 flex flex-col gap-10">
 
+  <section class="m-10 flex flex-col gap-10">
     <!--Top Section-->
     <section>
       <h1 class="text-2xl font-bold">Batteries Connected</h1>
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Battery IDs</TableHead>
+            <TableHead>Battery Port</TableHead>
             <TableHead>Voltage</TableHead>
             <TableHead>Current</TableHead>
             <TableHead>Temperature</TableHead>
@@ -65,14 +66,15 @@ async function exportToCSV() {
 
         <!--Table Battery-->
         <TableBody>
-          <TableRow>
-            <TableCell>0x00</TableCell>
-            <TableCell>5V</TableCell>
-            <TableCell>0.2mA</TableCell>
-            <TableCell>20.02C</TableCell>
-            <TableCell>20.02C</TableCell>
-            <TableCell>20.02C</TableCell>
-            <TableCell>10:30:03</TableCell>
+
+          <TableRow v-for="battery in batteries">
+            <TableCell>{{ battery.port }}</TableCell>
+            <TableCell>{{battery.voltage / 100}}V</TableCell>
+            <TableCell>{{battery.current / 100}}mA</TableCell>
+            <TableCell>{{battery.battery_temperature / 100}}C</TableCell>
+            <TableCell>{{battery.temperature / 100}}C</TableCell>
+            <TableCell>{{battery.electronic_load_temperature / 100}}C</TableCell>
+            <TableCell>{{ +battery.end_date- +battery.start_date }} </TableCell>
             <TableCell>
               <Badge variant="secondary">
                 Standby
@@ -87,28 +89,7 @@ async function exportToCSV() {
               <Button>Begin Test</Button>
             </TableCell>
           </TableRow>
-          <TableRow>
-            <TableCell>0x01</TableCell>
-            <TableCell>5V</TableCell>
-            <TableCell>0.2mA</TableCell>
-            <TableCell>20.02C</TableCell>
-            <TableCell>20.02C</TableCell>
-            <TableCell>20.02C</TableCell>
-            <TableCell>10:30:03</TableCell>
-            <TableCell>
-              <Badge variant="secondary">
-                Standby
-              </Badge>
-            </TableCell>
-            <TableCell>
-              <Badge variant="secondary">
-                Standby
-              </Badge>
-            </TableCell>
-            <TableCell class="text-right">
-              <Button>Begin Test</Button>
-            </TableCell>
-          </TableRow>
+
         </TableBody>
 
 

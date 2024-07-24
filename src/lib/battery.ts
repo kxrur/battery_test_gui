@@ -23,8 +23,8 @@ export interface BatteryBench {
 	current: number;
 	state: BatteryBenchState;
 	status: CompletionStatus;
-	start_date: Date|null;
-	end_date: Date|null;
+	start_date: Date;
+	end_date: Date;
 }
 
 type chartData = {
@@ -37,6 +37,9 @@ export function useBatteryManager() {
 	const open_ports = computed(
 		() => [...batteries.value].map(battery => battery[0])
 	)
+
+	const latest_data = computed(() => 
+	[...batteries.value].map(battery => battery[1][battery[1].length - 1]))
 
 	const batteries_voltages = computed(
 		() => {
@@ -150,6 +153,7 @@ export function useBatteryManager() {
 
 	return {
 		batteries,
+		latest_data,
 		open_ports,
 		batteries_voltages,
 		batteries_currents,
