@@ -33,44 +33,31 @@ pub struct BatteryBench {
 }
 
 impl BatteryBench {
+
+	pub fn init_searching() {
+		todo!()
+
+		//spawns a thread that scans all the open ports every sec and adds them to open ports list
+	}
+
 	pub fn new() -> Result<BatteryBench, &'static str> {
 		todo!()
+
+		//pings a newly open port to check if firmware is running on the port
 	}
 	
 	pub fn start_sequence(&mut self) {
 		todo!()
+
+		//starts a thread for the thread that pings the bench every sec
 	}
 	
+
 	pub fn complete_sequence_step(&mut self) {
 		todo!()
 	}
 	
 	pub fn complete_sequence(&mut self) {
 		todo!()
-	}
-}
-
-
-#[derive(Debug)]
-pub struct Port{
-	addr : String,
-	state : PortStatus,
-}	
-
-#[derive(Debug)]
-pub enum PortStatus {
-	Pinged,
-	NoResponse,
-	Unpinged,
-}
-
-
-impl Port {
-	pub fn init() -> Vec<String> {
-
-		todo!()	
-		//Spawn a thread that checks for open ports to ping and 
-		//check if they are battery testers
-
 	}
 }

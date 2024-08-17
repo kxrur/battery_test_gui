@@ -18,39 +18,66 @@
 /// let decoded = decode(&encoded).unwrap();
 /// assert_eq!(decoded, vec![0x01, 0x02, 0x03]);
 /// ```
-
-use serde::Serialize;
-use bincode;
 use std::io::{ Write , Read};
-use std::{path, string};
 use std::time::Duration;
+use std::{thread, time, vec};
+use serde::{Deserialize, Serialize};
 
 
 const DELIMITER : u8 = 0xB3;
 
 
-#[derive(Serialize, Debug)]
-enum Command {
-	Ping(PingPayload),
-	AssignID(AssignIDPayload),
-	RequestData(RequestDataPayload),
-	SetStandby,
-	SetDischarge,
-	SetCharge,
-	AnnounceCompletion(AnnounceCompletionPayload)
+#[derive(Debug , Clone, Copy)]
+enum Command{
+    Ping = 0x00,
+    RequestData = 0x02,
+    SetCharge = 0x04,
+    SetDischarge = 0x05,
+    SetStandBy = 0x06,
+    RequestCompletion = 0x07
 }
 
-#[derive(Serialize, Debug)]
+#[derive(Debug)]
 struct PingPayload {
-	identification : u8
+	bench_status : u8,
 }
 
-#[derive(Serialize, Debug)]
-struct AssignIDPayload {
-	new_id : u8
+
+
+
+#[derive(Debug)]
+struct AnnounceCompletionPayload {
+	bench_status : u8,
+	experiment_status : u8,
 }
 
-#[derive(Serialize, Debug)]
+impl Command {
+
+    fn id(&self) -> u8{
+        *self as u8
+    }
+
+    fn responseLenght(&self) -> usize{
+        match self {
+            Command::RequestData => 12,
+            Command::RequestCompletion => 4,
+            _ => 3
+        }
+    }
+
+    fn encode(&self) -> Vec<u8> {
+
+        vec![DELIMITER , self.id() , DELIMITER ^ self.id()]
+
+    }
+}
+
+struct CompletionStatus{
+    bench_status : u8,
+    experiment_status : u8
+}
+
+#[derive(Debug,Serialize,Deserialize)]
 struct RequestDataPayload {
 	battery_temperature : u16,
 	bench_temperature : u16,
@@ -58,83 +85,38 @@ struct RequestDataPayload {
 	voltage : u16,
 	current : u16,
 }
-
-#[derive(Serialize, Debug)]
-struct AnnounceCompletionPayload {
-	flag : u8
-}
-
-impl Command{
-
-	fn get_id(&self) -> u8 {
-		match &self {
-			Command::Ping(_) => 0x00,
-			Command::AssignID(_) => 0x01,
-			Command::RequestData(_) => 0x02,
-			Command::SetStandby => 0x04,
-			Command::SetDischarge => 0x05,
-			Command::SetCharge => 0x06,
-			Command::AnnounceCompletion(_) => 0x07
-		}
-	}
-
-	fn decode(encoded: Vec<u8>) -> Command {
-		Command::Ping(
-			PingPayload {
-				identification : 0x1A
-			}
-		)
-	}
-
-	fn encode(&self) -> Vec<u8> {
+fn command_request(value:Command, port_num: &str) -> Vec<u8>{
 
 
-		let mut serialized: Vec<u8> = match self {
-				Command::Ping(db) => bincode::serialize(db).unwrap(),
-				Command::AssignID(db) => bincode::serialize(db).unwrap(),
-				Command::RequestData(db) => bincode::serialize(db).unwrap(),
-				Command::SetStandby => vec![],
-				Command::SetDischarge => vec![],
-				Command::SetCharge => vec![],
-				Command::AnnounceCompletion(db) => bincode::serialize(db).unwrap()
-		};
+    let encodedData = value.encode();
 
-		serialized.insert(0, self.get_id());
-		serialized.insert(0, DELIMITER);
+    let expectedBytes = value.responseLenght();
 
 
-		let mut checksum = serialized[0];
-		let mut index = 1;
 
-		while index < serialized.len() {
-			checksum ^= serialized[index];
-			index+=1;
-		};
-
-		serialized.push(checksum);
-
-		serialized
+    let mut response: Vec<u8> = vec![0; expectedBytes];
 
 
-	}
-
-	fn send(&self, port: &str) -> Vec<u8>{
-
-		let data = self.encode();
-
-		let mut port = serialport::new(port, 115200)
-    	.timeout(Duration::from_millis(10))
-    	.open().expect("Failed to open port");
-
-		port.write(&data).expect("Write failed!");
+    let mut port= serialport::new(port_num, 19200)
+    .timeout(Duration::from_millis(100))
+    .open().expect("Failed to open port");
 
 
-		let mut serial_buf: Vec<u8> = vec![0; 32];
-    	port.read(serial_buf.as_mut_slice()).expect("Found no data!");
+  
+    port.write(&encodedData).expect("Write failed!");
 
 
-		serial_buf
-	}
+    //change me pls*****************************************************
+    let mut i = 0;
+    let mut hasResult = true;
+
+    while port.read_exact(response.as_mut_slice()).is_err() {
+            thread::sleep(Duration::from_millis(333));
+            println!("data was not ready");
+    };
+    
+    response
+    
 
 }
 
@@ -166,42 +148,22 @@ mod tests {
 
 	#[test]
 	fn test_encode() {
+		let response = command_request(Command::RequestCompletion, "COM7");
 
-		let command = Command::Ping(PingPayload{ identification : 0x05 });
-
-		let response = command.send("COM7");
-
-		println!("Command: {:?}", response);
+		println!("{:?}",response);
 	}
 
 	#[test]
 	fn test_decode() {
-		let encoded = vec![0xB3, 0x01, 0x02, 0x03, 0xB3 ^ 0x01 ^ 0x02 ^ 0x03];
-		let decoded = Command::decode(encoded);
-		//assert_eq!(decoded, vec![0x01, 0x02, 0x03]);
-
-		let encoded = vec![0xB3, 0x00, 0xFF, 0x55, 0xB3 ^ 0x00 ^ 0xFF ^ 0x55];
-		let decoded = Command::decode(encoded);
-		//assert_eq!(decoded, vec![0x00, 0xFF, 0x55]);
 	}
 
 	#[test]
 	fn test_decode_invalid_checksum() {
 
-		let encoded = vec![0xB3, 0x01, 0x02, 0x03, 0x00];
-		let result = Command::decode(encoded);
-
-		//assert!(result.is_err());
-		//assert_eq!(result.err(), Some("Invalid checksum"));
 	}
 
 	#[test]
 	fn test_decode_too_short() {
 
-		let encoded = vec![0xB3];
-		let result = Command::decode(encoded);
-
-		//assert!(result.is_err());
-		//assert_eq!(result.err(), Some("Input is too short to be valid"));
 	}
 }
