@@ -1,4 +1,4 @@
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onMounted, Ref } from "vue";
 import { listen } from "@tauri-apps/api/event";
 
 export enum BatteryBenchState {
@@ -31,7 +31,7 @@ type chartData = {
   [key: string]: any;
 };
 
-export function useBatteryManager() {
+export function useBatteryManager(selectedInterval: Ref<number>) {
   const batteries = ref<Map<string, BatteryBench[]>>(
     new Map<string, BatteryBench[]>(),
   );
@@ -142,7 +142,7 @@ export function useBatteryManager() {
         !isWithinLastNSeconds(
           batteryBenches.at(0)!.end_date,
           batteryBenches.at(-1)!.end_date,
-          5,
+          selectedInterval.value,
         )
       ) {
         batteries.value?.get(payload.port)?.shift();
