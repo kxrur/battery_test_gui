@@ -6,13 +6,13 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table'
-import { Button } from '@/components/ui/button'
-import { LineChart } from '@/components/ui/chart-line'
-import { Badge } from '@/components/ui/badge'
-import { useBatteryManager } from '@/lib/battery.ts'
-import { invoke } from '@tauri-apps/api/tauri' // added to use the export_to_csv() from backend and invoke tauri commands
-
+} from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import { LineChart } from "@/components/ui/chart-line";
+import { Badge } from "@/components/ui/badge";
+import { useBatteryManager } from "@/lib/battery.ts";
+import { invoke } from "@tauri-apps/api/tauri"; // added to use the export_to_csv() from backend and invoke tauri commands
+import { open } from "@tauri-apps/api/dialog";
 
 const batteryManager = useBatteryManager();
 
@@ -24,26 +24,27 @@ const battery_temp = batteryManager.batteries_temperatures;
 const bench_temp = batteryManager.battery_benches_temperatures;
 const elec_temp = batteryManager.bench_loads_temperatures;
 
-
 // invokes the export_csv_command tauri command and creates the csv file in the project's main directory (supposed to)
 async function exportToCSV() {
   try {
-    // const projectDir = await invoke('get_project_dir', { steps: 3 });
-    let projectDir = "C://Users//zephr//Desktop//SC";
-    console.log('Project Directory:', projectDir); // Debug
+    const projectDir = await open({
+      directory: true,
+      multiple: false,
+    });
+    // // const projectDir = await invoke('get_project_dir', { steps: 3 });
+    // let projectDir = "C://Users//zephr//Desktop//SC";
+    console.log("Project Directory:", projectDir); // Debug
     const csvPath = projectDir;
-    await invoke('export_csv_command', { csvPath });
-    alert('CSV export successful!');
+    await invoke("export_csv_command", { csvPath });
+    alert("CSV export successful!");
   } catch (error) {
-    console.error('Failed to export CSV:', error);
-    alert('Failed to export CSV.');
+    console.error("Failed to export CSV:", error);
+    alert("Failed to export CSV.");
   }
 }
-
 </script>
 
 <template>
-
   <section class="m-10 flex flex-col gap-10">
     <!--Top Section-->
     <section>
@@ -66,37 +67,31 @@ async function exportToCSV() {
 
         <!--Table Battery-->
         <TableBody>
-
           <TableRow v-for="battery in batteries">
             <TableCell>{{ battery.port }}</TableCell>
-            <TableCell>{{battery.voltage / 100}}V</TableCell>
-            <TableCell>{{battery.current / 100}}mA</TableCell>
-            <TableCell>{{battery.battery_temperature / 100}}C</TableCell>
-            <TableCell>{{battery.temperature / 100}}C</TableCell>
-            <TableCell>{{battery.electronic_load_temperature / 100}}C</TableCell>
-            <TableCell>{{ +battery.end_date- +battery.start_date }} </TableCell>
-            <TableCell>
-              <Badge variant="secondary">
-                Standby
-              </Badge>
+            <TableCell>{{ battery.voltage / 100 }}V</TableCell>
+            <TableCell>{{ battery.current / 100 }}mA</TableCell>
+            <TableCell>{{ battery.battery_temperature / 100 }}C</TableCell>
+            <TableCell>{{ battery.temperature / 100 }}C</TableCell>
+            <TableCell
+              >{{ battery.electronic_load_temperature / 100 }}C</TableCell
+            >
+            <TableCell
+              >{{ +battery.end_date - +battery.start_date }}
             </TableCell>
             <TableCell>
-              <Badge variant="secondary">
-                Standby
-              </Badge>
+              <Badge variant="secondary"> Standby </Badge>
+            </TableCell>
+            <TableCell>
+              <Badge variant="secondary"> Standby </Badge>
             </TableCell>
             <TableCell class="text-right">
               <Button>Begin Test</Button>
             </TableCell>
           </TableRow>
-
         </TableBody>
-
-
       </Table>
     </section>
-
-
 
     <section class="grid grid-cols-2 gap-5">
       <h2 class="text-2xl font-bold">Voltage [V]</h2>
@@ -107,7 +102,7 @@ async function exportToCSV() {
         class="max-h-64"
         :data="voltages"
         index="index"
-        :categories='open_ports'
+        :categories="open_ports"
       />
 
       <!--current chart-->
@@ -118,7 +113,6 @@ async function exportToCSV() {
         :categories="open_ports"
       />
     </section>
-
 
     <section class="grid grid-cols-3 gap-5">
       <h2 class="text-2xl font-bold">Battery Temperature [C]</h2>
