@@ -1,164 +1,166 @@
-import { ref, computed, onMounted } from 'vue'
-import { listen } from '@tauri-apps/api/event';
+import { ref, computed, onMounted } from "vue";
+import { listen } from "@tauri-apps/api/event";
 
-export enum BatteryBenchState  {
-	STANDBY,
-	CHARGE,
-	DISCHARGE
+export enum BatteryBenchState {
+  STANDBY,
+  CHARGE,
+  DISCHARGE,
 }
 
 export enum CompletionStatus {
-	SUCCESS,
-	FAIL,
-	IN_PROGRESS
+  SUCCESS,
+  FAIL,
+  IN_PROGRESS,
 }
 
 export interface BatteryBench {
-	id: number;
-	port: string;
-	temperature: number;
-	battery_temperature: number;
-	electronic_load_temperature: number;
-	voltage: number;
-	current: number;
-	state: BatteryBenchState;
-	status: CompletionStatus;
-	start_date: Date;
-	end_date: Date;
+  id: number;
+  port: string;
+  temperature: number;
+  battery_temperature: number;
+  electronic_load_temperature: number;
+  voltage: number;
+  current: number;
+  state: BatteryBenchState;
+  status: CompletionStatus;
+  start_date: Date;
+  end_date: Date;
 }
 
 type chartData = {
-	[key : string] : any,
-}
+  [key: string]: any;
+};
 
 export function useBatteryManager() {
-	const batteries = ref<Map<string,BatteryBench[]>>( new Map<string , BatteryBench[]>);
-	
-	const open_ports = computed(
-		() => [...batteries.value].map(battery => battery[0])
-	)
+  const batteries = ref<Map<string, BatteryBench[]>>(
+    new Map<string, BatteryBench[]>(),
+  );
 
-	const latest_data = computed(() => 
-	[...batteries.value].map(battery => battery[1][battery[1].length - 1]))
+  const isWithinLastNSeconds = (
+    date: Date | string | number,
+    latestDate: Date | string | number,
+    seconds: number,
+  ): boolean => {
+    const dateObj = date instanceof Date ? date : new Date(date);
+    const latestDateObj =
+      latestDate instanceof Date ? latestDate : new Date(latestDate);
 
-	const batteries_voltages = computed(
-		() => {
+    const delta = latestDateObj.getTime() - dateObj.getTime();
+    console.log("date: ", dateObj);
+    console.log("latest date: ", latestDateObj);
+    return delta <= seconds * 1000;
+  };
 
-			const data: chartData[] = [];
+  const open_ports = computed(() =>
+    [...batteries.value].map((battery) => battery[0]),
+  );
 
-			[...batteries.value].forEach(battery => {
+  const latest_data = computed(() =>
+    [...batteries.value].map((battery) => battery[1][battery[1].length - 1]),
+  );
 
-				for(let i=0; i < battery[1].length; i++)
-				{
+  const batteries_voltages = computed(() => {
+    const data: chartData[] = [];
 
-					if(data[i] == undefined)
-						data[i] = { 'index' : i };
-					
-					data[i][battery[0]] = battery[1][i].voltage / 100;
-				}
-			})
+    [...batteries.value].forEach((battery) => {
+      for (let i = 0; i < battery[1].length; i++) {
+        if (data[i] == undefined) data[i] = { index: i };
 
-			return data;
-		})
-	
-	const batteries_temperatures = computed(
-		() => {
+        data[i][battery[0]] = battery[1][i].voltage / 100;
+      }
+    });
 
-			const data: chartData[] = [];
+    return data;
+  });
 
-			[...batteries.value].forEach(battery => {
+  const batteries_temperatures = computed(() => {
+    const data: chartData[] = [];
 
-				for(let i=0; i < battery[1].length; i++)
-				{
+    [...batteries.value].forEach((battery) => {
+      for (let i = 0; i < battery[1].length; i++) {
+        if (data[i] == undefined) data[i] = { index: i };
 
-					if(data[i] == undefined)
-						data[i] = { 'index' : i };
-					
-					data[i][battery[0]] = battery[1][i].battery_temperature / 100;
-				}
-			})
+        data[i][battery[0]] = battery[1][i].battery_temperature / 100;
+      }
+    });
 
-			return data;
-		})
-	
-	const batteries_currents = computed(
-		() => {
+    return data;
+  });
 
-			const data: chartData[] = [];
+  const batteries_currents = computed(() => {
+    const data: chartData[] = [];
 
-			[...batteries.value].forEach(battery => {
+    [...batteries.value].forEach((battery) => {
+      for (let i = 0; i < battery[1].length; i++) {
+        if (data[i] == undefined) data[i] = { index: i };
 
-				for(let i=0; i < battery[1].length; i++)
-				{
+        data[i][battery[0]] = battery[1][i].current / 100;
+      }
+    });
 
-					if(data[i] == undefined)
-						data[i] = { 'index' : i };
-					
-					data[i][battery[0]] = battery[1][i].current / 100;
-				}
-			})
+    return data;
+  });
+  const battery_benches_temperatures = computed(() => {
+    const data: chartData[] = [];
 
-			return data;
-		})	
-	const battery_benches_temperatures = computed(
-		() => {
+    [...batteries.value].forEach((battery) => {
+      for (let i = 0; i < battery[1].length; i++) {
+        if (data[i] == undefined) data[i] = { index: i };
 
-			const data: chartData[] = [];
+        data[i][battery[0]] = battery[1][i].temperature / 100;
+      }
+    });
 
-			[...batteries.value].forEach(battery => {
+    return data;
+  });
+  const bench_loads_temperatures = computed(() => {
+    const data: chartData[] = [];
 
-				for(let i=0; i < battery[1].length; i++)
-				{
+    [...batteries.value].forEach((battery) => {
+      for (let i = 0; i < battery[1].length; i++) {
+        if (data[i] == undefined) data[i] = { index: i };
 
-					if(data[i] == undefined)
-						data[i] = { 'index' : i };
-					
-					data[i][battery[0]] = battery[1][i].temperature / 100;
-				}
-			})
+        data[i][battery[0]] = battery[1][i].electronic_load_temperature / 100;
+      }
+    });
 
-			return data;
-		})
-	const bench_loads_temperatures = computed(
-		() => {
+    return data;
+  });
 
-			const data: chartData[] = [];
+  onMounted(async () => {
+    await listen("display-battery", (event) => {
+      const payload = event.payload as BatteryBench;
 
-			[...batteries.value].forEach(battery => {
+      !batteries.value?.has(payload.port) &&
+        batteries.value?.set(payload.port, []);
 
-				for(let i=0; i < battery[1].length; i++)
-				{
+      batteries.value?.get(payload.port)?.push(payload);
 
-					if(data[i] == undefined)
-						data[i] = { 'index' : i };
-					
-					data[i][battery[0]] = battery[1][i].electronic_load_temperature / 100;
-				}
-			})
+      let batteryBenches = batteries.value?.get(payload.port);
+      if (
+        batteryBenches &&
+        !isWithinLastNSeconds(
+          batteryBenches.at(0)!.end_date,
+          batteryBenches.at(-1)!.end_date,
+          5,
+        )
+      ) {
+        batteries.value?.get(payload.port)?.shift();
+        console.log("meh?");
+      }
 
-			return data;
-		})
+      console.log(batteryBenches);
+    });
+  });
 
-	onMounted(async () => {
-		await listen('display-battery', event => {
-
-			const payload = event.payload as BatteryBench;
-			
-			!batteries.value?.has(payload.port) && batteries.value?.set(payload.port, []);
-
-			batteries.value?.get(payload.port)?.push(payload);
-
-		});
-	});
-
-	return {
-		batteries,
-		latest_data,
-		open_ports,
-		batteries_voltages,
-		batteries_currents,
-		batteries_temperatures,
-		battery_benches_temperatures,
-		bench_loads_temperatures
-	}
+  return {
+    batteries,
+    latest_data,
+    open_ports,
+    batteries_voltages,
+    batteries_currents,
+    batteries_temperatures,
+    battery_benches_temperatures,
+    bench_loads_temperatures,
+  };
 }
