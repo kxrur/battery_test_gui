@@ -1,17 +1,16 @@
-# Battery Qualification Bench GUI
-Battery qualification is a crucial step when building a CubeSat. The team must purchase a batch of cells and evaluate them to ensure they pass the NR-SRD-139 requirement. The GUI serves as a pilot and controls several [Battery Cell Qualification Benches](https://github.com/scsd-cdh/battery_test_firmware). It also logs all the data so that it can be looked at later on.
+# Tauri + Vue + TypeScript
 
-## Getting Started
-To run the application in the development environment the developer must run the following commands.
+This template should help get you started developing with Vue 3 and TypeScript in Vite. The template uses Vue 3 `<script setup>` SFCs, check out the [script setup docs](https://v3.vuejs.org/api/sfc-script-setup.html#sfc-script-setup) to learn more.
 
-```bash
-yarn install
-yarn tauri dev
-```
+## Recommended IDE Setup
 
-This should launch the application.
+- [VS Code](https://code.visualstudio.com/) + [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) + [Tauri](https://marketplace.visualstudio.com/items?itemName=tauri-apps.tauri-vscode) + [rust-analyzer](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer)
 
-## Contribution
-Before attempting to contribute to the project, the reader must familiarize themselves with the [Software Design Document](docs/sdd.md). The document explains in detail the architecture of the application and serves as a guide for the development of the tool.
+## Type Support For `.vue` Imports in TS
 
-For all development related to the visuals of the application, please use [shadcn components](https://www.shadcn-vue.com/docs/components), do not make custom components unless you need to group several shadcn components together. The project already has several of the components installed, these can be seen in `src/components/ui`. If the component you want to use is missing, simply install it following the guide on the shadcn website.
+Since TypeScript cannot handle type information for `.vue` imports, they are shimmed to be a generic Vue component type by default. In most cases this is fine if you don't really care about component prop types outside of templates. However, if you wish to get actual prop types in `.vue` imports (for example to get props validation when using manual `h(...)` calls), you can enable Volar's Take Over mode by following these steps:
+
+1. Run `Extensions: Show Built-in Extensions` from VS Code's command palette, look for `TypeScript and JavaScript Language Features`, then right click and select `Disable (Workspace)`. By default, Take Over mode will enable itself if the default TypeScript extension is disabled.
+2. Reload the VS Code window by running `Developer: Reload Window` from the command palette.
+
+You can learn more about Take Over mode [here](https://github.com/johnsoncodehk/volar/discussions/471).

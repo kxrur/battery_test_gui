@@ -1,199 +1,160 @@
 <script setup lang="ts">
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuPortal,
-  DropdownMenuSeparator,
-  DropdownMenuShortcut,
-  DropdownMenuSub,
-  DropdownMenuSubContent,
-  DropdownMenuSubTrigger,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Button } from "@/components/ui/button";
-import { LineChart } from "@/components/ui/chart-line";
-import { Badge } from "@/components/ui/badge";
-import { useBatteryManager } from "@/lib/battery.ts";
-import { invoke } from "@tauri-apps/api/tauri"; // added to use the export_to_csv() from backend and invoke tauri commands
-import { open } from "@tauri-apps/api/dialog";
 import { ref } from "vue";
+import { invoke } from "@tauri-apps/api/core";
 
-interface TimeOption {
-  label: string;
-  value: number;
-}
+const greetMsg = ref("");
+const name = ref("");
 
-const timeOptions: TimeOption[] = [
-  { label: "Last 5 sec", value: 5 },
-  { label: "Last 30 sec", value: 30 },
-  { label: "Last 1 min", value: 60 },
-  { label: "Last 2 min", value: 120 },
-  { label: "Last 5 min", value: 300 },
-];
-
-const selectedInterval = ref(5);
-
-const batteryManager = useBatteryManager(selectedInterval);
-
-const batteries = batteryManager.latest_data;
-const open_ports = batteryManager.open_ports;
-const voltages = batteryManager.batteries_voltages;
-const currents = batteryManager.batteries_currents;
-const battery_temp = batteryManager.batteries_temperatures;
-const bench_temp = batteryManager.battery_benches_temperatures;
-const elec_temp = batteryManager.bench_loads_temperatures;
-
-// invokes the export_csv_command tauri command and creates the csv file in the project's main directory (supposed to)
-async function exportToCSV() {
-  try {
-    const projectDir = await open({
-      directory: true,
-      multiple: false,
-    });
-    console.log("Project Directory:", projectDir); // Debug
-    const csvPath = projectDir;
-    await invoke("export_csv_command", { csvPath });
-    alert("CSV export successful!");
-  } catch (error) {
-    console.error("Failed to export CSV:", error);
-    alert("Failed to export CSV.");
-  }
+async function greet() {
+  // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
+  greetMsg.value = await invoke("greet", { name: name.value });
 }
 </script>
 
 <template>
-  <section class="m-10 flex flex-col gap-10">
-    <!--Top Section-->
-    <section>
-      <h1 class="text-2xl font-bold">Batteries Connected</h1>
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Battery Port</TableHead>
-            <TableHead>Voltage</TableHead>
-            <TableHead>Current</TableHead>
-            <TableHead>Temperature</TableHead>
-            <TableHead>Bench Temperature</TableHead>
-            <TableHead>Electronic Load Temperature</TableHead>
-            <TableHead>Duration</TableHead>
-            <TableHead>Bench State</TableHead>
-            <TableHead>Test Status</TableHead>
-            <TableHead></TableHead>
-          </TableRow>
-        </TableHeader>
+  <main class="container">
+    <h1>Welcome to Tauri + Vue</h1>
 
-        <!--Table Battery-->
-        <TableBody>
-          <TableRow v-for="battery in batteries">
-            <TableCell>{{ battery.port }}</TableCell>
-            <TableCell>{{ battery.voltage / 100 }}V</TableCell>
-            <TableCell>{{ battery.current / 100 }}mA</TableCell>
-            <TableCell>{{ battery.battery_temperature / 100 }}C</TableCell>
-            <TableCell>{{ battery.temperature / 100 }}C</TableCell>
-            <TableCell
-              >{{ battery.electronic_load_temperature / 100 }}C</TableCell
-            >
-            <TableCell
-              >{{ +battery.end_date - +battery.start_date }}
-            </TableCell>
-            <TableCell>
-              <Badge variant="secondary"> Standby </Badge>
-            </TableCell>
-            <TableCell>
-              <Badge variant="secondary"> Standby </Badge>
-            </TableCell>
-            <TableCell class="text-right">
-              <Button>Begin Test</Button>
-            </TableCell>
-          </TableRow>
-        </TableBody>
-      </Table>
-    </section>
-
-    <!-- Time Filter Dropdown -->
-    <div class="mb-4 flex items-center gap-4">
-      <label class="font-semibold">Trim history older than:</label>
-
-      <DropdownMenu>
-        <DropdownMenuTrigger as-child>
-          <Button>
-            {{
-              timeOptions.find(
-                (opt: TimeOption) => opt.value === selectedInterval,
-              )?.label
-            }}
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent>
-          <DropdownMenuItem
-            v-for="option in timeOptions"
-            :key="option.value"
-            @click="selectedInterval = option.value"
-          >
-            {{ option.label }}
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+    <div class="row">
+      <a href="https://vitejs.dev" target="_blank">
+        <img src="/vite.svg" class="logo vite" alt="Vite logo" />
+      </a>
+      <a href="https://tauri.app" target="_blank">
+        <img src="/tauri.svg" class="logo tauri" alt="Tauri logo" />
+      </a>
+      <a href="https://vuejs.org/" target="_blank">
+        <img src="./assets/vue.svg" class="logo vue" alt="Vue logo" />
+      </a>
     </div>
+    <p>Click on the Tauri, Vite, and Vue logos to learn more.</p>
 
-    <section class="grid grid-cols-2 gap-5">
-      <h2 class="text-2xl font-bold">Voltage [V]</h2>
-      <h2 class="text-2xl font-bold">Current [mA]</h2>
-
-      <!--Voltage chart-->
-      <LineChart
-        class="max-h-64"
-        :data="voltages"
-        index="index"
-        :categories="open_ports"
-      />
-
-      <!--current chart-->
-      <LineChart
-        class="max-h-64"
-        :data="currents"
-        index="index"
-        :categories="open_ports"
-      />
-    </section>
-
-    <section class="grid grid-cols-3 gap-5">
-      <h2 class="text-2xl font-bold">Battery Temperature [C]</h2>
-      <h2 class="text-2xl font-bold">Bench Temperature [C]</h2>
-      <h2 class="text-2xl font-bold">Electronic Load Temperature [C]</h2>
-
-      <LineChart
-        class="max-h-64"
-        :data="battery_temp"
-        index="index"
-        :categories="open_ports"
-      />
-      <LineChart
-        class="max-h-64"
-        :data="bench_temp"
-        index="index"
-        :categories="open_ports"
-      />
-      <LineChart
-        class="max-h-64"
-        :data="elec_temp"
-        index="index"
-        :categories="open_ports"
-      />
-    </section>
-    <section>
-      <Button @click="exportToCSV">Export to CSV</Button>
-    </section>
-  </section>
+    <form class="row" @submit.prevent="greet">
+      <input id="greet-input" v-model="name" placeholder="Enter a name..." />
+      <button type="submit">Greet</button>
+    </form>
+    <p>{{ greetMsg }}</p>
+  </main>
 </template>
+
+<style scoped>
+.logo.vite:hover {
+  filter: drop-shadow(0 0 2em #747bff);
+}
+
+.logo.vue:hover {
+  filter: drop-shadow(0 0 2em #249b73);
+}
+
+</style>
+<style>
+:root {
+  font-family: Inter, Avenir, Helvetica, Arial, sans-serif;
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 400;
+
+  color: #0f0f0f;
+  background-color: #f6f6f6;
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-text-size-adjust: 100%;
+}
+
+.container {
+  margin: 0;
+  padding-top: 10vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  text-align: center;
+}
+
+.logo {
+  height: 6em;
+  padding: 1.5em;
+  will-change: filter;
+  transition: 0.75s;
+}
+
+.logo.tauri:hover {
+  filter: drop-shadow(0 0 2em #24c8db);
+}
+
+.row {
+  display: flex;
+  justify-content: center;
+}
+
+a {
+  font-weight: 500;
+  color: #646cff;
+  text-decoration: inherit;
+}
+
+a:hover {
+  color: #535bf2;
+}
+
+h1 {
+  text-align: center;
+}
+
+input,
+button {
+  border-radius: 8px;
+  border: 1px solid transparent;
+  padding: 0.6em 1.2em;
+  font-size: 1em;
+  font-weight: 500;
+  font-family: inherit;
+  color: #0f0f0f;
+  background-color: #ffffff;
+  transition: border-color 0.25s;
+  box-shadow: 0 2px 2px rgba(0, 0, 0, 0.2);
+}
+
+button {
+  cursor: pointer;
+}
+
+button:hover {
+  border-color: #396cd8;
+}
+button:active {
+  border-color: #396cd8;
+  background-color: #e8e8e8;
+}
+
+input,
+button {
+  outline: none;
+}
+
+#greet-input {
+  margin-right: 5px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    color: #f6f6f6;
+    background-color: #2f2f2f;
+  }
+
+  a:hover {
+    color: #24c8db;
+  }
+
+  input,
+  button {
+    color: #ffffff;
+    background-color: #0f0f0f98;
+  }
+  button:active {
+    background-color: #0f0f0f69;
+  }
+}
+
+</style>
