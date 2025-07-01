@@ -1,7 +1,7 @@
 <template>
-  <div>
+  <div >
     <h1 class="text-3xl font-bold underline text-teal-500">Hello world!</h1>
-    <Button @click="commands.helloWorld('lel')">Greet</Button>
+    <Button ">Greet </Button>
   </div>
 </template>
 
