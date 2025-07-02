@@ -5,7 +5,14 @@
 
 
 export const commands = {
-
+async insertBatteryLog(logData: BatteryLog) : Promise<Result<BatteryLog, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("insert_battery_log", { logData }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+}
 }
 
 /** user-defined events **/
@@ -18,7 +25,7 @@ export const commands = {
 
 /** user-defined types **/
 
-
+export type BatteryLog = { record_id: number | null; id: number; port: string; temperature: number; battery_temperature: number; electronic_load_temperature: number; voltage: number; current: number; state: string; status: string; start_date: string | null; end_date: string | null }
 
 /** tauri-specta globals **/
 

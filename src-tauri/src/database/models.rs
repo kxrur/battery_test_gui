@@ -4,10 +4,12 @@
 #![allow(clippy::all)]
 
 use diesel::prelude::*;
+use serde::{Deserialize, Serialize};
+use specta::Type;
 
 use crate::database::schema::battery_logs;
 
-#[derive(Queryable, Debug, Identifiable)]
+#[derive(Queryable, Debug, Identifiable, Insertable, Type, Serialize, Deserialize)]
 #[diesel(primary_key(record_id))]
 #[diesel(table_name = battery_logs)]
 pub struct BatteryLog {
