@@ -7,13 +7,15 @@ mod database;
 
 mod state;
 
+use database::export::export_csv;
 use database::sqlite::init_database;
 
 use crate::{database::sqlite::insert_battery_log, state::AppState};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    let builder = Builder::<tauri::Wry>::new().commands(collect_commands![insert_battery_log]);
+    let builder =
+        Builder::<tauri::Wry>::new().commands(collect_commands![insert_battery_log, export_csv]);
 
     #[cfg(debug_assertions)] // <- Only export on non-release builds
     builder

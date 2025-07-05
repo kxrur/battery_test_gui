@@ -1,9 +1,14 @@
-<template>
-  <div>
-    <ManualAddBatteryLog></ManualAddBatteryLog>
-  </div>
-</template>
-
 <script setup lang="ts">
-import ManualAddBatteryLog from "./components/debug/ManualAddBatteryLog.vue";
+import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import DebugNavBar from "./components/debug/DebugNavBar.vue";
 </script>
+
+<template>
+  <SidebarProvider>
+    <DebugNavBar />
+    <main>
+      <SidebarTrigger />
+      <slot />
+    </main>
+  </SidebarProvider>
+</template>

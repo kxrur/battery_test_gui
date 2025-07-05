@@ -1,8 +1,5 @@
-use serde::Serialize;
-use specta::Type;
 use std::fs;
 use std::sync::Mutex;
-use tauri::ipc::InvokeError;
 use thiserror::Error;
 
 use diesel::prelude::*;
@@ -29,6 +26,13 @@ pub enum DatabaseError {
     Migration(Box<dyn std::error::Error + Send + Sync + 'static>),
     #[error("Database operation error: {0}")]
     Operation(#[source] diesel::result::Error),
+}
+
+pub fn get_all_battery_logs(conn: &mut SqliteConnection) -> Result<Vec<BatteryLog>, String> {
+    use crate::database::schema::battery_logs::dsl::*;
+    battery_logs
+        .load::<BatteryLog>(conn)
+        .map_err(|e| format!("Failed to load battery logs: {}", e))
 }
 
 #[tauri::command]
