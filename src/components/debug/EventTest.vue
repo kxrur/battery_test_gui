@@ -1,18 +1,22 @@
 <template>
   <div>
-    <h1>Help: {{ l }}</h1>
+    <Button @click="start">Activate Process</Button>
   </div>
 </template>
 
 <script setup lang="ts">
-import { events } from "@/bindings";
-import { ref } from "vue";
+import { Channel } from "@tauri-apps/api/core";
+import { Button } from "../ui/button";
+import { BatteryLog, commands } from "@/bindings";
 
-const l = ref<string>("no event");
+const onEvent = new Channel<BatteryLog>();
 
-// For all windows
-events.demoEvent.listen((e) => {
-  console.log("from backend", e);
-  l.value = e.payload;
-});
+const start = async () => {
+  commands.parseLog(onEvent);
+};
+
+onEvent.onmessage = (message) => {
+  console.log(`got download event`, message.end_date);
+  console.log(`got download data`, message.id);
+};
 </script>

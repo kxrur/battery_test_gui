@@ -20,17 +20,15 @@ async exportCsv(basePath: string) : Promise<Result<null, string>> {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
 }
+},
+async parseLog(onEvent: TAURI_CHANNEL<BatteryLog>) : Promise<void> {
+    await TAURI_INVOKE("parseLog", { onEvent });
 }
 }
 
 /** user-defined events **/
 
 
-export const events = __makeEvents__<{
-demoEvent: DemoEvent
-}>({
-demoEvent: "demo-event"
-})
 
 /** user-defined constants **/
 
@@ -39,7 +37,7 @@ demoEvent: "demo-event"
 /** user-defined types **/
 
 export type BatteryLog = { record_id: number | null; id: number; port: string; temperature: number; battery_temperature: number; electronic_load_temperature: number; voltage: number; current: number; state: string; status: string; start_date: string | null; end_date: string | null }
-export type DemoEvent = string
+export type TAURI_CHANNEL<TSend> = null
 
 /** tauri-specta globals **/
 

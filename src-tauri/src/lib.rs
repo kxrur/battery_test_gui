@@ -1,6 +1,5 @@
-use serde::{Deserialize, Serialize};
-use std::sync::Mutex;
-use tauri::Manager;
+use std::{sync::Mutex, thread, time};
+use tauri::{ipc::Channel, AppHandle, Manager};
 
 use specta_typescript::Typescript;
 use tauri_specta::*;
@@ -12,12 +11,41 @@ mod state;
 use database::export::export_csv;
 use database::sqlite::init_database;
 
-use crate::{database::sqlite::insert_battery_log, state::AppState};
+use crate::{
+    database::{models::BatteryLog, sqlite::insert_battery_log},
+    state::AppState,
+};
+
+#[tauri::command]
+#[specta::specta]
+async fn parseLog(app: AppHandle, on_event: Channel<BatteryLog>) {
+    thread::spawn(move || loop {
+        let log = BatteryLog {
+            record_id: Some(32),
+            id: 3,
+            port: "port".to_string(),
+            temperature: 31,
+            battery_temperature: 22,
+            electronic_load_temperature: 12,
+            voltage: 300,
+            current: 500,
+            state: "state".to_string(),
+            status: "status".to_string(),
+            start_date: Some("start date".to_string()),
+            end_date: Some("end date".to_string()),
+        };
+        thread::sleep(time::Duration::from_secs(2));
+        on_event.send(log).unwrap();
+    });
+}
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    let builder =
-        Builder::<tauri::Wry>::new().commands(collect_commands![insert_battery_log, export_csv]);
+    let builder = Builder::<tauri::Wry>::new().commands(collect_commands![
+        insert_battery_log,
+        export_csv,
+        parseLog
+    ]);
 
     #[cfg(debug_assertions)] // <- Only export on non-release builds
     builder
