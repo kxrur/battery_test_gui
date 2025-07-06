@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/sidebar";
 
 import ManualAddBatteryLog from "./ManualAddBatteryLog.vue";
-import DownloadLogs from "./DownloadLogs.vue";
+import DownloadLogs from "@/components/DownloadLogs.vue";
 
 // Define dialog items and associated components
 const dialogItems = [
