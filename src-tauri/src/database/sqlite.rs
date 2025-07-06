@@ -69,7 +69,6 @@ pub fn init_database(app_handle: &tauri::AppHandle) -> Result<(), DatabaseError>
         .path()
         .app_data_dir()
         .map_err(DatabaseError::AppDataDir)?;
-    dbg!(&app_dir);
 
     // Create directory if it doesn't exist
     fs::create_dir_all(&app_dir).map_err(DatabaseError::CreateDir)?;

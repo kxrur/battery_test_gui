@@ -15,18 +15,6 @@ import { toast } from "vue-sonner";
 // Import the commands if they're available in your setup
 import { commands } from "@/bindings"; // Adjust the import path as needed
 
-const formData = ref({
-  id: 0,
-  port: "",
-  temperature: 0,
-  battery_temperature: 0,
-  electronic_load_temperature: 0,
-  voltage: 0,
-  current: 0,
-  state: "",
-  status: "",
-});
-
 const isLoading = ref(false);
 
 const states = ["charging", "discharging", "idle", "maintenance", "error"];
@@ -35,12 +23,26 @@ const statuses = ["active", "inactive", "completed", "failed"];
 
 const ports = ["COM1", "COM2", "COM3", "USB1", "USB2"];
 
+const formData = ref({
+  id: 0,
+  port: ports[0],
+  temperature: 0,
+  battery_temperature: 0,
+  electronic_load_temperature: 0,
+  voltage: 0,
+  current: 0,
+  state: states[0],
+  status: statuses[0],
+});
+
+const initialFormData = formData.value;
+
 const handleSubmit = async () => {
   isLoading.value = true;
 
   try {
     const result = await commands.insertBatteryLog({
-      record_id: null, // will be set by the database
+      record_id: null,
       id: formData.value.id,
       port: formData.value.port,
       temperature: formData.value.temperature,
@@ -50,41 +52,28 @@ const handleSubmit = async () => {
       current: formData.value.current,
       state: formData.value.state,
       status: formData.value.status,
-      start_date: null, // will be set by the database if needed
-      end_date: null, // will be set by the database if needed
+      start_date: null,
+      end_date: null,
     });
 
     if (result.status === "ok") {
-      toast({
-        title: "Success",
-        description: "Battery log has been saved successfully",
-        variant: "default",
+      toast("Battery log saved", {
+        description: "Saved successfully to the database.",
       });
-      // Reset form or navigate away
-      formData.value = {
-        id: 0,
-        port: "",
-        temperature: 0,
-        battery_temperature: 0,
-        electronic_load_temperature: 0,
-        voltage: 0,
-        current: 0,
-        state: "",
-        status: "",
-      };
+
+      // Reset form
+      formData.value = initialFormData;
     } else {
-      toast({
-        title: "Error",
-        description: result.error,
-        variant: "destructive",
+      toast("Error saving log", {
+        description: result.error ?? "Unknown database error.",
       });
     }
   } catch (error) {
-    toast({
-      title: "Error",
+    toast("Submission error", {
       description:
-        error instanceof Error ? error.message : "An unknown error occurred",
-      variant: "destructive",
+        error instanceof Error
+          ? error.message
+          : "An unexpected error occurred.",
     });
   } finally {
     isLoading.value = false;
