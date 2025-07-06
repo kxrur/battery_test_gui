@@ -1,7 +1,9 @@
-use specta_typescript::Typescript;
+use serde::{Deserialize, Serialize};
 use std::sync::Mutex;
 use tauri::Manager;
-use tauri_specta::{collect_commands, Builder};
+
+use specta_typescript::Typescript;
+use tauri_specta::*;
 
 mod database;
 
