@@ -7,18 +7,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
-import { LineChart } from "@/components/ui/chart-line";
 import { Badge } from "@/components/ui/badge";
-import { ref } from "vue";
-import { BatteryLog } from "@/bindings";
+import { onMounted, ref } from "vue";
+import { BatteryLog, commands } from "@/bindings";
 import { Channel } from "@tauri-apps/api/core";
 import BeginTest from "@/components/helpers/BeginTest.vue";
-
-interface TimeOption {
-  label: string;
-  value: number;
-}
+import Charts from "@/components/Charts.vue";
 
 const bat: BatteryLog = {
   battery_temperature: 3,
@@ -42,6 +36,22 @@ onEvent.onmessage = (batteryLog) => {
   battery.value = batteryLog;
   console.log(`got battery log:`, batteryLog);
 };
+
+const batteryLogs = ref<BatteryLog[]>();
+
+onMounted(() => {
+  commands
+    .getAllBatteryLogs()
+    .then((value) => {
+      if (value.status === "ok") {
+        batteryLogs.value = value.data;
+        console.log(batteryLogs);
+      }
+    })
+    .catch((error) => {
+      console.log(error);
+    });
+});
 </script>
 
 <template>
@@ -90,15 +100,7 @@ onEvent.onmessage = (batteryLog) => {
         </TableBody>
       </Table>
     </section>
-    <section class="grid grid-cols-2 gap-5">
-      <h2 class="text-2xl font-bold">Voltage [V]</h2>
-      <h2 class="text-2xl font-bold">Current [mA]</h2>
-    </section>
-
-    <section class="grid grid-cols-3 gap-5">
-      <h2 class="text-2xl font-bold">Battery Temperature [C]</h2>
-      <h2 class="text-2xl font-bold">Bench Temperature [C]</h2>
-      <h2 class="text-2xl font-bold">Electronic Load Temperature [C]</h2>
-    </section>
+    <Charts v-if="batteryLogs != undefined" :battery-logs="batteryLogs">
+    </Charts>
   </section>
 </template>

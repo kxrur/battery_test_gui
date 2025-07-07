@@ -14,7 +14,10 @@ use database::export::export_csv;
 use database::sqlite::init_database;
 
 use crate::{
-    database::{models::BatteryLog, sqlite::insert_battery_log},
+    database::{
+        models::BatteryLog,
+        sqlite::{get_all_battery_logs, insert_battery_log},
+    },
     state::AppState,
 };
 
@@ -50,7 +53,8 @@ pub fn run() {
     let builder = Builder::<tauri::Wry>::new().commands(collect_commands![
         insert_battery_log,
         export_csv,
-        parse_log
+        parse_log,
+        get_all_battery_logs
     ]);
 
     #[cfg(debug_assertions)] // <- Only export on non-release builds

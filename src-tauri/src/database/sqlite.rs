@@ -28,10 +28,20 @@ pub enum DatabaseError {
     Operation(#[source] diesel::result::Error),
 }
 
-pub fn get_all_battery_logs(conn: &mut SqliteConnection) -> Result<Vec<BatteryLog>, String> {
+#[tauri::command]
+#[specta::specta]
+pub fn get_all_battery_logs(statee: State<'_, Mutex<AppState>>) -> Result<Vec<BatteryLog>, String> {
+    let mut app_state = statee.lock().map_err(|e| e.to_string())?;
+
+    if app_state.db_connection.is_none() {
+        app_state.db_connection =
+            Some(establish_connection(&app_state.db_path).map_err(|e| e.to_string())?);
+    }
+
+    let connection = app_state.db_connection.as_mut().unwrap();
     use crate::database::schema::battery_logs::dsl::*;
     battery_logs
-        .load::<BatteryLog>(conn)
+        .load::<BatteryLog>(connection)
         .map_err(|e| format!("Failed to load battery logs: {}", e))
 }
 

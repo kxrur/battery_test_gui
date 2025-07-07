@@ -13,18 +13,7 @@ use tauri::State;
 #[tauri::command]
 #[specta::specta]
 pub fn export_csv(statee: State<'_, Mutex<AppState>>, base_path: String) -> Result<(), String> {
-    let mut app_state = statee.lock().map_err(|e| e.to_string())?;
-
-    let connection = match &mut app_state.db_connection {
-        Some(conn) => conn,
-        None => {
-            let conn = establish_connection(&app_state.db_path).map_err(|e| e.to_string())?;
-            app_state.db_connection = Some(conn);
-            app_state.db_connection.as_mut().unwrap()
-        }
-    };
-
-    let all_logs = get_all_battery_logs(connection)?;
+    let all_logs = get_all_battery_logs(statee)?;
 
     let mut grouped_logs: std::collections::HashMap<i32, Vec<BatteryLog>> =
         std::collections::HashMap::new();

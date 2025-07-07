@@ -23,6 +23,14 @@ async exportCsv(basePath: string) : Promise<Result<null, string>> {
 },
 async parseLog(onEvent: TAURI_CHANNEL<BatteryLog>) : Promise<void> {
     await TAURI_INVOKE("parse_log", { onEvent });
+},
+async getAllBatteryLogs() : Promise<Result<BatteryLog[], string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_all_battery_logs") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
 }
 }
 

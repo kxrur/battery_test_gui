@@ -23,7 +23,7 @@ const openDirectoryPicker = async () => {
         const result = await commands.exportCsv(storageFolder.value);
         if (result.status === "ok") {
           toast("Battery logs downloaded", {
-            description: `Battery logs downloaded to ${storageFolder}`,
+            description: `Battery logs downloaded to ${storageFolder.value}`,
           });
         }
       } catch (error) {
