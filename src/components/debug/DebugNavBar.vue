@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { ref, defineAsyncComponent, shallowRef, h } from "vue";
-import { Plus, Download } from "lucide-vue-next";
+import { ref } from "vue";
+import { Plus, Download, Calendar } from "lucide-vue-next";
 
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import {
@@ -16,6 +16,7 @@ import {
 
 import ManualAddBatteryLog from "./ManualAddBatteryLog.vue";
 import DownloadLogs from "@/components/DownloadLogs.vue";
+import EventTest from "@/components/debug/EventTest.vue";
 
 // Define dialog items and associated components
 const dialogItems = [
@@ -30,6 +31,12 @@ const dialogItems = [
     title: "Download Csv",
     icon: Download,
     component: DownloadLogs,
+  },
+  {
+    key: "event",
+    title: "Event Test",
+    icon: Calendar,
+    component: EventTest,
   },
 ] as const;
 

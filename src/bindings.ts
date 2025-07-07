@@ -22,7 +22,7 @@ async exportCsv(basePath: string) : Promise<Result<null, string>> {
 }
 },
 async parseLog(onEvent: TAURI_CHANNEL<BatteryLog>) : Promise<void> {
-    await TAURI_INVOKE("parseLog", { onEvent });
+    await TAURI_INVOKE("parse_log", { onEvent });
 }
 }
 

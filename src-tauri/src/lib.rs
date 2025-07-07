@@ -1,8 +1,10 @@
 use std::{sync::Mutex, thread, time};
-use tauri::{ipc::Channel, AppHandle, Manager};
+use tauri::{ipc::Channel, Manager};
 
 use specta_typescript::Typescript;
 use tauri_specta::*;
+
+use rand::Rng;
 
 mod database;
 
@@ -18,13 +20,16 @@ use crate::{
 
 #[tauri::command]
 #[specta::specta]
-async fn parseLog(app: AppHandle, on_event: Channel<BatteryLog>) {
+async fn parse_log(on_event: Channel<BatteryLog>) {
     thread::spawn(move || loop {
+        let mut rng = rand::rng();
+
+        let temp: i32 = rng.random();
         let log = BatteryLog {
             record_id: Some(32),
             id: 3,
             port: "port".to_string(),
-            temperature: 31,
+            temperature: temp,
             battery_temperature: 22,
             electronic_load_temperature: 12,
             voltage: 300,
@@ -35,6 +40,7 @@ async fn parseLog(app: AppHandle, on_event: Channel<BatteryLog>) {
             end_date: Some("end date".to_string()),
         };
         thread::sleep(time::Duration::from_secs(2));
+        dbg!(&log);
         on_event.send(log).unwrap();
     });
 }
@@ -44,7 +50,7 @@ pub fn run() {
     let builder = Builder::<tauri::Wry>::new().commands(collect_commands![
         insert_battery_log,
         export_csv,
-        parseLog
+        parse_log
     ]);
 
     #[cfg(debug_assertions)] // <- Only export on non-release builds

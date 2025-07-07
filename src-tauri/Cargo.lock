@@ -288,6 +288,7 @@ dependencies = [
  "csv",
  "diesel",
  "diesel_migrations",
+ "rand 0.9.1",
  "serde",
  "serde_json",
  "specta",
