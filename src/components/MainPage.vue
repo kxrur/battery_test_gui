@@ -13,7 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { ref } from "vue";
 import { BatteryLog } from "@/bindings";
 import { Channel } from "@tauri-apps/api/core";
-import EventTest from "./debug/EventTest.vue";
+import BeginTest from "@/components/helpers/BeginTest.vue";
 
 interface TimeOption {
   label: string;
@@ -84,7 +84,7 @@ onEvent.onmessage = (batteryLog) => {
               <Badge variant="secondary"> Standby </Badge>
             </TableCell>
             <TableCell class="text-right">
-              <EventTest :onEvent="onEvent"></EventTest>
+              <BeginTest :onEvent="onEvent"></BeginTest>
             </TableCell>
           </TableRow>
         </TableBody>

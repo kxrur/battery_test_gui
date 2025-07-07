@@ -15,8 +15,8 @@ import {
 } from "@/components/ui/sidebar";
 
 import ManualAddBatteryLog from "./ManualAddBatteryLog.vue";
-import DownloadLogs from "@/components/DownloadLogs.vue";
-import EventTest from "@/components/debug/EventTest.vue";
+import DownloadLogs from "@/components/helpers/DownloadLogs.vue";
+import BeginTest from "@/components/helpers/BeginTest.vue";
 
 // Define dialog items and associated components
 const dialogItems = [
@@ -36,7 +36,7 @@ const dialogItems = [
     key: "event",
     title: "Event Test",
     icon: Calendar,
-    component: EventTest,
+    component: BeginTest,
   },
 ] as const;
 
