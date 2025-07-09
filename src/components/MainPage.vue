@@ -13,6 +13,7 @@ import { BatteryLog, commands } from "@/bindings";
 import { Channel } from "@tauri-apps/api/core";
 import BeginTest from "@/components/helpers/BeginTest.vue";
 import Charts from "@/components/Charts.vue";
+import { rand } from "@vueuse/core";
 
 const bat: BatteryLog = {
   battery_temperature: 3,
@@ -34,6 +35,8 @@ const battery = ref<BatteryLog>(bat);
 const onEvent = new Channel<BatteryLog>();
 onEvent.onmessage = (batteryLog) => {
   battery.value = batteryLog;
+  batteryLogs.value?.shift();
+  batteryLogs.value?.push(batteryLog);
   console.log(`got battery log:`, batteryLog);
 };
 
@@ -45,6 +48,27 @@ onMounted(() => {
     .then((value) => {
       if (value.status === "ok") {
         batteryLogs.value = value.data;
+        for (let i = 0; i < 1000; i++) {
+          const temperature = rand(
+            Number.MIN_SAFE_INTEGER,
+            Number.MAX_SAFE_INTEGER,
+          );
+
+          batteryLogs.value.push({
+            battery_temperature: 30,
+            current: 3,
+            electronic_load_temperature: 12,
+            end_date: "end date",
+            id: 1,
+            port: "Port",
+            record_id: 9,
+            start_date: "start date",
+            state: "state",
+            status: "status",
+            temperature: temperature,
+            voltage: 399,
+          });
+        }
         console.log(batteryLogs);
       }
     })
