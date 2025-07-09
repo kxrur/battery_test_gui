@@ -82,9 +82,7 @@ const handleSubmit = async () => {
 </script>
 
 <template>
-  <div class="max-w-md mx-auto p-6 bg-card rounded-lg shadow-sm">
-    <h1 class="text-2xl font-bold mb-6">Add Battery Log</h1>
-
+  <div>
     <form @submit.prevent="handleSubmit" class="space-y-4">
       <div>
         <Label for="id">Battery ID</Label>

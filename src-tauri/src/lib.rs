@@ -7,6 +7,7 @@ use tauri_specta::*;
 use rand::Rng;
 
 mod database;
+mod serial;
 
 mod state;
 

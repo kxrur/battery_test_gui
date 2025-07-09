@@ -48,7 +48,7 @@ onMounted(() => {
     .then((value) => {
       if (value.status === "ok") {
         batteryLogs.value = value.data;
-        for (let i = 0; i < 1000; i++) {
+        for (let i = 0; i < -1; i++) {
           const temperature = rand(
             Number.MIN_SAFE_INTEGER,
             Number.MAX_SAFE_INTEGER,
