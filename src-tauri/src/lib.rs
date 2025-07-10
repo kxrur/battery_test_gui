@@ -19,6 +19,7 @@ use crate::{
         models::BatteryLog,
         sqlite::{get_all_battery_logs, insert_battery_log},
     },
+    serial::serial::{command_request, detect_serial_ports},
     state::AppState,
 };
 
@@ -55,7 +56,9 @@ pub fn run() {
         insert_battery_log,
         export_csv,
         parse_log,
-        get_all_battery_logs
+        get_all_battery_logs,
+        command_request,
+        detect_serial_ports
     ]);
 
     #[cfg(debug_assertions)] // <- Only export on non-release builds

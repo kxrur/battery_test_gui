@@ -73,7 +73,7 @@ dialogItems.forEach((item) => {
                   <DialogTitle class="text-lg font-medium">
                     {{ item.title }} Test
                   </DialogTitle>
-                  <DialogDescription> leh </DialogDescription>
+                  <DialogDescription></DialogDescription>
                   <component :is="item.component" />
                 </DialogContent>
               </Dialog>

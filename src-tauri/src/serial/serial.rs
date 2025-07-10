@@ -1,32 +1,14 @@
 use serde::{Deserialize, Serialize};
+use serialport::available_ports;
 use specta::Type;
-/// Decodes a slice of bytes by removing the prepended 0xB3 and verifying the checksum.
-///
-/// The checksum is verified as the XOR of every byte in the input slice. If the checksum does not match, the function will return an error.
-///
-/// # Arguments
-///
-/// * `bytes` - A slice of bytes to be decoded. It must have at least 2 bytes: the prepended 0xB3 and the checksum.
-///
-/// # Returns
-///
-/// A `Result<Vec<u8>, &'static str>` containing the decoded bytes or an error message if the checksum is invalid.
-///
-/// # Example
-///
-/// ```
-/// let encoded = vec![0xB3, 0x01, 0x02, 0x03, 0xB3 ^ 0x01 ^ 0x02 ^ 0x03];
-/// let decoded = decode(&encoded).unwrap();
-/// assert_eq!(decoded, vec![0x01, 0x02, 0x03]);
-/// ```
 use std::io::{Read, Write};
 use std::time::Duration;
 use std::{thread, vec};
 
 const DELIMITER: u8 = 0xB3;
 
-#[derive(Debug, Clone, Copy, Type)]
-enum Command {
+#[derive(Debug, Clone, Copy, Type, Serialize, Deserialize)]
+pub enum Command {
     Ping = 0x00,
     RequestData = 0x02,
     SetCharge = 0x04,
@@ -77,7 +59,19 @@ struct RequestDataPayload {
     voltage: u16,
     current: u16,
 }
-fn command_request(value: Command, port_num: &str) -> Vec<u8> {
+
+#[tauri::command]
+#[specta::specta]
+pub fn detect_serial_ports() -> Result<Vec<String>, String> {
+    match serialport::available_ports() {
+        Ok(ports) => Ok(ports.into_iter().map(|p| p.port_name).collect()),
+        Err(e) => Err(format!("Error listing serial ports: {}", e)),
+    }
+}
+
+#[tauri::command]
+#[specta::specta]
+pub fn command_request(value: Command, port_num: &str) -> Vec<u8> {
     let encoded_data = value.encode();
 
     let expected_bytes = value.response_lenght();
@@ -91,7 +85,7 @@ fn command_request(value: Command, port_num: &str) -> Vec<u8> {
 
     port.write_all(&encoded_data).expect("Write failed!");
 
-    //change me pls*****************************************************
+    //FIXME: change me pls
     let mut _i = 0;
     let mut _has_result = true;
 
@@ -122,7 +116,6 @@ fn command_request(value: Command, port_num: &str) -> Vec<u8> {
 /// let encoded = [0xB3, 0x00, 0x05, 0xB3 ^ 0x00 ^ 0x05];
 /// assert_eq!(encoded, vec![0xB3, 0x01, 0x02, 0x03, 0xB3 ^ 0x01 ^ 0x02 ^ 0x03]);
 /// ```
-
 #[cfg(test)]
 mod tests {
     use super::*;

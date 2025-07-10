@@ -31,6 +31,17 @@ async getAllBatteryLogs() : Promise<Result<BatteryLog[], string>> {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
 }
+},
+async commandRequest(value: Command, portNum: string) : Promise<number[]> {
+    return await TAURI_INVOKE("command_request", { value, portNum });
+},
+async detectSerialPorts() : Promise<Result<string[], string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("detect_serial_ports") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
 }
 }
 
@@ -45,6 +56,7 @@ async getAllBatteryLogs() : Promise<Result<BatteryLog[], string>> {
 /** user-defined types **/
 
 export type BatteryLog = { record_id: number | null; id: number; port: string; temperature: number; battery_temperature: number; electronic_load_temperature: number; voltage: number; current: number; state: string; status: string; start_date: string | null; end_date: string | null }
+export type Command = "Ping" | "RequestData" | "SetCharge" | "SetDischarge" | "SetStandBy" | "RequestCompletion"
 export type TAURI_CHANNEL<TSend> = null
 
 /** tauri-specta globals **/
