@@ -63,7 +63,7 @@ struct RequestDataPayload {
 #[tauri::command]
 #[specta::specta]
 pub fn detect_serial_ports() -> Result<Vec<String>, String> {
-    match serialport::available_ports() {
+    match available_ports() {
         Ok(ports) => Ok(ports.into_iter().map(|p| p.port_name).collect()),
         Err(e) => Err(format!("Error listing serial ports: {}", e)),
     }
@@ -71,30 +71,37 @@ pub fn detect_serial_ports() -> Result<Vec<String>, String> {
 
 #[tauri::command]
 #[specta::specta]
-pub fn command_request(value: Command, port_num: &str) -> Vec<u8> {
+pub async fn command_request(value: Command, port_num: &str) -> Result<Vec<u8>, String> {
     let encoded_data = value.encode();
+    dbg!(&encoded_data);
 
     let expected_bytes = value.response_lenght();
+    dbg!(&expected_bytes);
 
-    let mut response: Vec<u8> = vec![0; expected_bytes];
+    thread::sleep(Duration::from_secs(15));
 
-    let mut port = serialport::new(port_num, 19200)
+    let mut response = vec![0u8; expected_bytes];
+
+    let mut port = serialport::new(port_num, 9600)
         .timeout(Duration::from_millis(100))
         .open()
-        .expect("Failed to open port");
+        .map_err(|e| e.to_string())?;
 
-    port.write_all(&encoded_data).expect("Write failed!");
+    port.write_all(&encoded_data).map_err(|e| e.to_string())?;
 
-    //FIXME: change me pls
-    let mut _i = 0;
-    let mut _has_result = true;
-
-    while port.read_exact(response.as_mut_slice()).is_err() {
-        thread::sleep(Duration::from_millis(333));
-        println!("data was not ready");
+    loop {
+        match port.read_exact(&mut response) {
+            Ok(_) => break,
+            Err(e) if e.kind() == std::io::ErrorKind::TimedOut => {
+                println!("data was not ready");
+                thread::sleep(Duration::from_millis(333));
+            }
+            Err(e) => return Err(e.to_string()),
+        }
     }
 
-    response
+    dbg!(&response);
+    Ok(response)
 }
 
 /// Encodes a slice of bytes by prepending 0xB3 and appending a checksum.
@@ -120,9 +127,9 @@ pub fn command_request(value: Command, port_num: &str) -> Vec<u8> {
 mod tests {
     use super::*;
 
-    #[test]
-    fn test_encode() {
-        let response = command_request(Command::RequestCompletion, "COM7");
+    #[tokio::test]
+    async fn test_encode() {
+        let response = command_request(Command::RequestCompletion, "COM7").await;
 
         println!("{:?}", response);
     }

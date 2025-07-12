@@ -32,8 +32,13 @@ async getAllBatteryLogs() : Promise<Result<BatteryLog[], string>> {
     else return { status: "error", error: e  as any };
 }
 },
-async commandRequest(value: Command, portNum: string) : Promise<number[]> {
-    return await TAURI_INVOKE("command_request", { value, portNum });
+async commandRequest(value: Command, portNum: string) : Promise<Result<number[], string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("command_request", { value, portNum }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
 },
 async detectSerialPorts() : Promise<Result<string[], string>> {
     try {
