@@ -5,8 +5,8 @@ Battery qualification is a crucial step when building a CubeSat. The team must p
 To run the application in the development environment the developer must run the following commands.
 
 ```bash
-yarn install
-yarn tauri dev
+npm install
+npm run tauri dev
 ```
 
 This should launch the application.
