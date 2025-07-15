@@ -37,3 +37,5 @@ tauri-plugin-dialog = "2"
 rand = "0.9.1"
 serialport = "4.7.2"
 chrono = { version = "0.4.41 ", features = ["serde"] }
+tokio = { version = "1.46.1", features = ["full"] }
+crc_all = "0.2.2"
