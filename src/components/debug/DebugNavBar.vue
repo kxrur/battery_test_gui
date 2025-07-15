@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from "vue";
-import { Plus, Download, Calendar, Play } from "lucide-vue-next";
+import { Plus, Download, CloudUpload, Play } from "lucide-vue-next";
 
 import {
   Dialog,
@@ -23,6 +23,7 @@ import {
 import ManualAddBatteryLog from "./ManualAddBatteryLog.vue";
 import DownloadLogs from "@/components/helpers/DownloadLogs.vue";
 import SendSerial from "./SendSerial.vue";
+import GenerateFakeData from "./GenerateFakeData.vue";
 
 // Define dialog items and associated components
 const dialogItems = [
@@ -43,6 +44,12 @@ const dialogItems = [
     title: "Serial Command",
     icon: Play,
     component: SendSerial,
+  },
+  {
+    key: "fakeData",
+    title: "Fake Data",
+    icon: CloudUpload,
+    component: GenerateFakeData,
   },
 ] as const;
 

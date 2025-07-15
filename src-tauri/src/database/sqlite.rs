@@ -7,7 +7,7 @@ use diesel::{Connection, SqliteConnection};
 use diesel_migrations::{embed_migrations, EmbeddedMigrations, MigrationHarness};
 use tauri::{Manager, State};
 
-use crate::database::models::BatteryLog;
+use crate::database::models::{BatteryLog, Test};
 use crate::state::AppState;
 
 pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!("./migrations");
@@ -71,6 +71,70 @@ pub fn insert_battery_log(
         .map_err(|e| e.to_string())?;
 
     Ok(inserted_log)
+}
+#[tauri::command]
+#[specta::specta]
+pub fn insert_test(statee: State<'_, Mutex<AppState>>, test: Test) -> Result<Test, String> {
+    let mut statee = statee.lock().map_err(|e| e.to_string())?;
+
+    if statee.db_connection.is_none() {
+        statee.db_connection =
+            Some(establish_connection(&statee.db_path).map_err(|e| e.to_string())?);
+    }
+
+    let conn = statee.db_connection.as_mut().unwrap();
+
+    diesel::insert_into(crate::database::schema::tests::table)
+        .values(&test)
+        .execute(conn)
+        .map_err(|e| e.to_string())?;
+
+    let inserted = crate::database::schema::tests::table
+        .order(crate::database::schema::tests::test_id.desc())
+        .first(conn)
+        .map_err(|e| e.to_string())?;
+
+    Ok(inserted)
+}
+
+#[tauri::command]
+#[specta::specta]
+pub fn get_battery_logs_for_test(
+    statee: State<'_, Mutex<AppState>>,
+    target_test_id: i32,
+) -> Result<Vec<BatteryLog>, String> {
+    let mut statee = statee.lock().map_err(|e| e.to_string())?;
+
+    if statee.db_connection.is_none() {
+        statee.db_connection =
+            Some(establish_connection(&statee.db_path).map_err(|e| e.to_string())?);
+    }
+
+    let conn = statee.db_connection.as_mut().unwrap();
+    use crate::database::schema::battery_logs::dsl::*;
+
+    battery_logs
+        .filter(test_id.eq(target_test_id))
+        .load::<BatteryLog>(conn)
+        .map_err(|e| format!("Failed to get logs for test {}: {}", target_test_id, e))
+}
+
+#[tauri::command]
+#[specta::specta]
+pub fn get_all_tests(state: State<'_, Mutex<AppState>>) -> Result<Vec<Test>, String> {
+    let mut state = state.lock().map_err(|e| e.to_string())?;
+
+    if state.db_connection.is_none() {
+        state.db_connection =
+            Some(establish_connection(&state.db_path).map_err(|e| e.to_string())?);
+    }
+
+    let conn = state.db_connection.as_mut().unwrap();
+
+    use crate::database::schema::tests::dsl::*;
+    tests
+        .load::<Test>(conn)
+        .map_err(|e| format!("Failed to load tests: {}", e))
 }
 
 pub fn init_database(app_handle: &tauri::AppHandle) -> Result<(), DatabaseError> {

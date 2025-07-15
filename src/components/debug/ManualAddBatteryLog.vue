@@ -54,6 +54,7 @@ const handleSubmit = async () => {
       status: formData.value.status,
       start_date: null,
       end_date: null,
+      test_id: 1,
     });
 
     if (result.status === "ok") {

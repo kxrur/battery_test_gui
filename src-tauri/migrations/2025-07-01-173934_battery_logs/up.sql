@@ -5,7 +5,8 @@ CREATE TABLE tests (
     start_date TEXT NOT NULL
 );
 CREATE TABLE battery_logs (
-    record_id integer primary key autoincrement, id integer not null,
+    record_id integer primary key autoincrement,
+    id integer not null,
     port TEXT NOT NULL,
     temperature INTEGER NOT NULL,
     battery_temperature INTEGER NOT NULL,
