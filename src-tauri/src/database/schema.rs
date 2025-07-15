@@ -14,5 +14,21 @@ diesel::table! {
         status -> Text,
         start_date -> Nullable<Text>,
         end_date -> Nullable<Text>,
+        test_id -> Integer,
     }
 }
+
+diesel::table! {
+    tests (test_id) {
+        test_id -> Nullable<Integer>,
+        test_name -> Text,
+        start_date -> Text,
+    }
+}
+
+diesel::joinable!(battery_logs -> tests (test_id));
+
+diesel::allow_tables_to_appear_in_same_query!(
+    battery_logs,
+    tests,
+);

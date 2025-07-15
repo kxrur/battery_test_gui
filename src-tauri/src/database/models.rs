@@ -3,12 +3,11 @@
 #![allow(unused)]
 #![allow(clippy::all)]
 
+use crate::database::schema::{battery_logs, tests};
+
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 use specta::Type;
-
-use crate::database::schema::battery_logs;
-
 #[derive(Queryable, Debug, Identifiable, Insertable, Type, Serialize, Deserialize)]
 #[diesel(primary_key(record_id))]
 #[diesel(table_name = battery_logs)]
@@ -25,4 +24,14 @@ pub struct BatteryLog {
     pub status: String,
     pub start_date: Option<String>,
     pub end_date: Option<String>,
+    pub test_id: i32,
+}
+
+#[derive(Queryable, Debug, Identifiable, Insertable, Type, Serialize, Deserialize)]
+#[diesel(primary_key(test_id))]
+#[diesel(table_name = tests)]
+pub struct Test {
+    pub test_id: Option<i32>,
+    pub test_name: String,
+    pub start_date: String,
 }

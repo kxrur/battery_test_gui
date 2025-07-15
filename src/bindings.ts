@@ -47,6 +47,38 @@ async detectSerialPorts() : Promise<Result<string[], string>> {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
 }
+},
+async populateFakeData() : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("populate_fake_data") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async getAllTests() : Promise<Result<Test[], string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_all_tests") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async getBatteryLogsForTest(targetTestId: number) : Promise<Result<BatteryLog[], string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_battery_logs_for_test", { targetTestId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async insertTest(test: Test) : Promise<Result<Test, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("insert_test", { test }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
 }
 }
 
@@ -60,9 +92,10 @@ async detectSerialPorts() : Promise<Result<string[], string>> {
 
 /** user-defined types **/
 
-export type BatteryLog = { record_id: number | null; id: number; port: string; temperature: number; battery_temperature: number; electronic_load_temperature: number; voltage: number; current: number; state: string; status: string; start_date: string | null; end_date: string | null }
-export type Command = "Ping" | "RequestData" | "SetCharge" | "SetDischarge" | "SetStandBy" | "RequestCompletion"
+export type BatteryLog = { record_id: number | null; id: number; port: string; temperature: number; battery_temperature: number; electronic_load_temperature: number; voltage: number; current: number; state: string; status: string; start_date: string | null; end_date: string | null; test_id: number }
+export type Command = "Ping" | "AssignId" | "RequestData" | "SetCharge" | "SetDischarge" | "SetStandBy" | "RequestCompletion"
 export type TAURI_CHANNEL<TSend> = null
+export type Test = { test_id: number | null; test_name: string; start_date: string }
 
 /** tauri-specta globals **/
 

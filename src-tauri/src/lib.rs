@@ -9,15 +9,20 @@ use rand::Rng;
 mod database;
 mod serial;
 
+mod misc;
 mod state;
 
 use database::export::export_csv;
 use database::sqlite::init_database;
+use misc::populate_fake_data;
 
 use crate::{
     database::{
         models::BatteryLog,
-        sqlite::{get_all_battery_logs, insert_battery_log},
+        sqlite::{
+            get_all_battery_logs, get_all_tests, get_battery_logs_for_test, insert_battery_log,
+            insert_test,
+        },
     },
     serial::serial::{command_request, detect_serial_ports},
     state::AppState,
@@ -43,6 +48,7 @@ async fn parse_log(on_event: Channel<BatteryLog>) {
             status: "status".to_string(),
             start_date: Some("start date".to_string()),
             end_date: Some("end date".to_string()),
+            test_id: 2,
         };
         thread::sleep(time::Duration::from_secs(2));
         dbg!(&log);
@@ -58,7 +64,11 @@ pub fn run() {
         parse_log,
         get_all_battery_logs,
         command_request,
-        detect_serial_ports
+        detect_serial_ports,
+        populate_fake_data,
+        get_all_tests,
+        get_battery_logs_for_test,
+        insert_test
     ]);
 
     #[cfg(debug_assertions)] // <- Only export on non-release builds
