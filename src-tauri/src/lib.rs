@@ -43,6 +43,7 @@ async fn parse_log(on_event: Channel<BatteryLog>) {
             status: "status".to_string(),
             start_date: Some("start date".to_string()),
             end_date: Some("end date".to_string()),
+            test_id: 2,
         };
         thread::sleep(time::Duration::from_secs(2));
         dbg!(&log);
