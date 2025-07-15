@@ -28,6 +28,7 @@ const bat: BatteryLog = {
   status: "status",
   temperature: 3,
   voltage: 399,
+  test_id: 3,
 };
 
 const battery = ref<BatteryLog>(bat);
@@ -67,6 +68,7 @@ onMounted(() => {
             status: "status",
             temperature: temperature,
             voltage: 399,
+            test_id: 3,
           });
         }
         console.log(batteryLogs);
