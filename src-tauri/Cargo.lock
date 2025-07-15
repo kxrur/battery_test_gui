@@ -286,6 +286,7 @@ name = "battery_test_gui"
 version = "0.1.0"
 dependencies = [
  "chrono",
+ "crc_all",
  "csv",
  "diesel",
  "diesel_migrations",
@@ -630,6 +631,12 @@ checksum = "a97769d94ddab943e4510d138150169a2758b5ef3eb191a9ee688de3e23ef7b3"
 dependencies = [
  "cfg-if",
 ]
+
+[[package]]
+name = "crc_all"
+version = "0.2.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c46c1a17ebeef917714db3ae9a17bd2184f7e9977d8e020c6c8bcf59a28a6f1b"
 
 [[package]]
 name = "crossbeam-channel"

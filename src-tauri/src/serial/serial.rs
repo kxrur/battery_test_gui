@@ -1,3 +1,4 @@
+use crc_all::CrcAlgo;
 use serde::{Deserialize, Serialize};
 use serialport::available_ports;
 use specta::Type;
@@ -6,6 +7,7 @@ use std::time::Duration;
 use std::{thread, vec};
 
 const DELIMITER: u8 = 0xB3;
+const CRC8_AUTOSAR: CrcAlgo<u8> = CrcAlgo::<u8>::new(0x2F, 8, 0xFF, 0xFF, false);
 
 #[derive(Debug, Clone, Copy, Type, Serialize, Deserialize)]
 pub enum Command {
@@ -45,7 +47,53 @@ impl Command {
     }
 
     fn encode(&self) -> Vec<u8> {
-        vec![DELIMITER, self.id(), DELIMITER ^ self.id()]
+        let payload: &[u8] = &[self.id()];
+
+        let crc = &mut 0u8;
+        CRC8_AUTOSAR.init_crc(crc);
+        CRC8_AUTOSAR.update_crc(crc, payload);
+
+        // Build final packet
+        let mut packet = Vec::new();
+        packet.push(DELIMITER);
+        packet.extend_from_slice(payload);
+        packet.push(*crc);
+
+        packet
+    }
+    pub fn decode(packet: &[u8]) -> Option<(Command, &[u8])> {
+        if packet.len() < 3 {
+            return None;
+        }
+
+        if packet[0] != DELIMITER {
+            return None;
+        }
+
+        let command_id = packet[1];
+        let received_crc = packet.last().copied()?;
+        let payload = &packet[1..packet.len() - 1];
+
+        let mut crc = 0u8;
+        CRC8_AUTOSAR.init_crc(&mut crc);
+        CRC8_AUTOSAR.update_crc(&mut crc, payload);
+
+        if crc != received_crc {
+            return None;
+        }
+
+        let command = match command_id {
+            0x00 => Command::Ping,
+            0x01 => Command::AssignId,
+            0x02 => Command::RequestData,
+            0x04 => Command::SetCharge,
+            0x05 => Command::SetDischarge,
+            0x06 => Command::SetStandBy,
+            0x07 => Command::RequestCompletion,
+            _ => return None,
+        };
+
+        Some((command, &packet[2..packet.len() - 1])) // return payload too
     }
 }
 
@@ -76,12 +124,16 @@ pub fn detect_serial_ports() -> Result<Vec<String>, String> {
 #[specta::specta]
 pub async fn command_request(value: Command, port_num: &str) -> Result<Vec<u8>, String> {
     let encoded_data = value.encode();
-    dbg!(&encoded_data);
+    println!("Encoded: [{}]", format_hex(&encoded_data));
 
     let expected_bytes = value.response_lenght();
-    dbg!(&expected_bytes);
+    println!("Expected Bytes: {}", expected_bytes);
 
-    thread::sleep(Duration::from_secs(15));
+    let decoded_data = Command::decode(&encoded_data);
+    if let Some((command, payload)) = decoded_data {
+        println!("Command: {:?}", command);
+        println!("Payload: [{}]", format_hex(payload));
+    }
 
     let mut response = vec![0u8; expected_bytes];
 
@@ -105,6 +157,13 @@ pub async fn command_request(value: Command, port_num: &str) -> Result<Vec<u8>, 
 
     dbg!(&response);
     Ok(response)
+}
+fn format_hex(bytes: &[u8]) -> String {
+    bytes
+        .iter()
+        .map(|b| format!("0x{:02X}", b))
+        .collect::<Vec<_>>()
+        .join(", ")
 }
 
 /// Encodes a slice of bytes by prepending 0xB3 and appending a checksum.
