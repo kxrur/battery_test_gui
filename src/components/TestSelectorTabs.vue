@@ -26,9 +26,7 @@ const selectTest = (test_id: number | null) => {
     <H6 class="font-bold"><pre> Select a Test</pre></H6>
     <TabsList>
       <TabsTrigger v-for="test in props.tests"  :value="test.test_id ?? ''" @click="selectTest(test.test_id)">
-        Test ID: {{test.test_id}}
       </TabsTrigger>
     </TabsList>
-    {{selectedTest}} << Temporary
   </Tabs>
 </template>

@@ -15,6 +15,7 @@ import BeginTest from "@/components/helpers/BeginTest.vue";
 import Charts from "@/components/Charts.vue";
 import TestSelectorTabs from "@/components/TestSelectorTabs.vue";
 import { rand } from "@vueuse/core";
+import { Button } from "./ui/button";
 
 const bat: BatteryLog = {
   battery_temperature: 3,
@@ -49,9 +50,8 @@ const tests = ref<Test[]>();
 const debugRef = ref<any>();
 
 const handleTabClick = () => {
-  //const selectedTestId = testSelectorTabs.value?.selectedTest.test_id;
-  //retrieveLogsFor(selectedTestId);
-  retrieveAllTests();
+  const selectedTestId = testSelectorTabs.value?.selectedTest.test_id;
+  retrieveLogsFor(selectedTestId);
 };
 function retrieveLogsFor(testId: number){
   commands.getBatteryLogsForTest(testId)
@@ -133,7 +133,6 @@ onMounted(() => {
         </TableBody>
       </Table>
     </section>
-
     {{debugRef}}
     <Charts v-if="batteryLogs != undefined" :battery-logs="batteryLogs">
     </Charts>
