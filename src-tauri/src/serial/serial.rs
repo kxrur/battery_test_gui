@@ -1,5 +1,4 @@
-// Rewritten to use `crc` crate instead of `crc_all`
-use crc::{Algorithm, Crc};
+use crc::Crc;
 use serde::{Deserialize, Serialize};
 use serialport::available_ports;
 use specta::Type;
@@ -34,8 +33,8 @@ struct AnnounceCompletionPayload {
 }
 
 impl Command {
-    fn id(&self) -> u8 {
-        *self as u8
+    fn id(&self) -> [u8; 2] {
+        [DELIMITER, *self as u8]
     }
 
     fn response_lenght(&self) -> usize {
@@ -48,16 +47,20 @@ impl Command {
         }
     }
 
-    fn encode(&self) -> Vec<u8> {
-        let payload: &[u8] = &[self.id()];
-        let crc = CRC8_AUTOSAR.checksum(payload);
+    fn checksum(id: &[u8], payload: &[u8]) -> u8 {
+        let mut digest = CRC8_AUTOSAR.digest();
+        digest.update(id);
+        digest.update(payload);
+        digest.finalize()
+    }
 
-        let mut packet = Vec::new();
-        packet.push(DELIMITER);
-        packet.extend_from_slice(payload);
-        packet.push(crc);
-
-        packet
+    fn encode(&self, payload: &[u8]) -> Vec<u8> {
+        let id = self.id();
+        let mut buffer = Vec::with_capacity(id.len() + payload.len() + 1);
+        buffer.extend_from_slice(&id);
+        buffer.extend_from_slice(payload);
+        buffer.push(Self::checksum(&id, payload));
+        buffer
     }
 
     pub fn decode(packet: &[u8]) -> Option<(Command, &[u8])> {
@@ -115,7 +118,7 @@ pub fn detect_serial_ports() -> Result<Vec<String>, String> {
 #[tauri::command]
 #[specta::specta]
 pub async fn command_request(value: Command, port_num: &str) -> Result<Vec<u8>, String> {
-    let encoded_data = value.encode();
+    let encoded_data = value.encode(&[0x3B]);
     println!("Encoded: [{}]", format_hex(&encoded_data));
 
     let expected_bytes = value.response_lenght();
@@ -175,10 +178,41 @@ mod tests {
         assert_eq!(crc, 0x7E, "CRC-8 AUTOSAR failed!");
     }
 
-    #[tokio::test]
-    async fn test_encode() {
-        let response = command_request(Command::RequestCompletion, "COM7").await;
-        println!("{:?}", response);
+    #[test]
+    fn test_crc8_autosar_digest_vector() {
+        let data = [0x12, 0x34];
+        let mut digest = CRC8_AUTOSAR.digest();
+        digest.update(&data);
+        let data_2 = [0x56];
+        digest.update(&data_2);
+        let crc = digest.finalize();
+        assert_eq!(crc, 0x7A, "CRC-8 AUTOSAR failed for first input!");
+
+        let data = [0x38, 0x46, 0x53];
+        let mut digest = CRC8_AUTOSAR.digest();
+        digest.update(&data);
+        let data_2 = [0x82];
+        digest.update(&data_2);
+        let crc = digest.finalize();
+        assert_eq!(crc, 0x7E, "CRC-8 AUTOSAR failed for second input!");
+    }
+
+    #[test]
+    fn test_encode() {
+        let data = &[0x12, 0x34, 0x56];
+        let cmd: Command = { Command::Ping };
+        let encoded_cmd = cmd.encode(data);
+
+        let mut expected = Vec::new();
+        expected.extend_from_slice(&cmd.id());
+        expected.extend_from_slice(data);
+        // use https://crccalc.com to compute the expected values
+        expected.push(0x17);
+
+        println!("left : {:02X?}", encoded_cmd);
+        println!("right: {:02X?}", expected);
+
+        assert_eq!(encoded_cmd, expected, "command encode failed")
     }
 
     #[test]
