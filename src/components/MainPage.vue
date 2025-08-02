@@ -9,10 +9,11 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { onMounted, ref } from "vue";
-import { BatteryLog, commands } from "@/bindings";
+import {BatteryLog, Test, commands, Result} from "@/bindings";
 import { Channel } from "@tauri-apps/api/core";
 import BeginTest from "@/components/helpers/BeginTest.vue";
 import Charts from "@/components/Charts.vue";
+import TestSelectorTabs from "@/components/TestSelectorTabs.vue";
 import { rand } from "@vueuse/core";
 
 const bat: BatteryLog = {
@@ -43,46 +44,52 @@ onEvent.onmessage = (batteryLog) => {
 
 const batteryLogs = ref<BatteryLog[]>();
 
-onMounted(() => {
-  commands
-    .getAllBatteryLogs()
-    .then((value) => {
-      if (value.status === "ok") {
-        batteryLogs.value = value.data;
-        for (let i = 0; i < -1; i++) {
-          const temperature = rand(
-            Number.MIN_SAFE_INTEGER,
-            Number.MAX_SAFE_INTEGER,
-          );
+const testSelectorTabs = ref<typeof TestSelectorTabs>();
+const tests = ref<Test[]>();
+const debugRef = ref<any>();
 
-          batteryLogs.value.push({
-            battery_temperature: 30,
-            current: 3,
-            electronic_load_temperature: 12,
-            end_date: "end date",
-            id: 1,
-            port: "Port",
-            record_id: 9,
-            start_date: "start date",
-            state: "state",
-            status: "status",
-            temperature: temperature,
-            voltage: 399,
-            test_id: 3,
-          });
+const handleTabClick = () => {
+  //const selectedTestId = testSelectorTabs.value?.selectedTest.test_id;
+  //retrieveLogsFor(selectedTestId);
+  retrieveAllTests();
+};
+function retrieveLogsFor(testId: number){
+  commands.getBatteryLogsForTest(testId)
+      .then((result) => {
+        if (result.status === "ok") {
+        batteryLogs.value = result.data;
+        } else{
+          debugRef.value = result.error
         }
-        console.log(batteryLogs);
-      }
-    })
-    .catch((error) => {
-      console.log(error);
-    });
-});
+      })
+      .catch((error) => console.log(error));
+}
+
+function retrieveAllTests(){
+  commands
+      .getAllTests()
+      .then((value) => {
+        if (value.status === "ok") {
+          tests.value = value.data;
+          console.log(tests);
+        } else {
+          debugRef.value = value.error
+        }
+      })
+      .catch((error) => {
+        console.log(error);
+      });
+}
+onMounted(() => {
+    retrieveAllTests();
+    tests.value = [{test_id:1, test_name:"test", start_date:"date"}, {test_id:2, test_name:"test", start_date:"date"}];
+  });
 </script>
 
 <template>
   <section class="m-10 flex flex-col gap-10">
     <!--Top Section-->
+    <TestSelectorTabs ref="testSelectorTabs" v-if="tests != undefined" :tests="tests" @click="handleTabClick"></TestSelectorTabs>
     <section>
       <h1 class="text-2xl font-bold">Batteries Connected</h1>
       <Table>
@@ -126,6 +133,8 @@ onMounted(() => {
         </TableBody>
       </Table>
     </section>
+
+    {{debugRef}}
     <Charts v-if="batteryLogs != undefined" :battery-logs="batteryLogs">
     </Charts>
   </section>
