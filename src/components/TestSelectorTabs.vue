@@ -23,9 +23,10 @@ const selectTest = (test_id: number | null) => {
 <template>
 
   <Tabs default-value="etc" orientation="horizontal">
-    <H6 class="font-bold"><pre> Select a Test</pre></H6>
+    <H6 class="font-bold">Select a Test</H6>
     <TabsList>
       <TabsTrigger v-for="test in props.tests"  :value="test.test_id ?? ''" @click="selectTest(test.test_id)">
+        {{ test?.test_name}}
       </TabsTrigger>
     </TabsList>
   </Tabs>
