@@ -6,11 +6,13 @@ use std::io::{Read, Write};
 use std::time::Duration;
 use std::{thread, vec};
 
+use crate::database::models::BatteryLog;
+
 const DELIMITER: u8 = 0xB3;
 
 const CRC8_AUTOSAR: Crc<u8> = Crc::<u8>::new(&crc::CRC_8_AUTOSAR);
 
-#[derive(Debug, Clone, Copy, Type, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Type, Serialize, Deserialize)]
 pub enum Command {
     Ping = 0x00,
     AssignId = 0x01,
@@ -39,7 +41,7 @@ impl Command {
 
     fn response_lenght(&self) -> usize {
         match self {
-            Command::RequestData => 12,
+            Command::RequestData => 13,
             Command::Ping => 4,
             Command::AssignId => 4,
             Command::RequestCompletion => 4,
@@ -63,18 +65,22 @@ impl Command {
         buffer
     }
 
-    pub fn decode(packet: &[u8]) -> Option<(Command, &[u8])> {
-        if packet.len() < 3 || packet[0] != DELIMITER {
-            return None;
+    pub fn decode(packet: &[u8]) -> Result<(Command, &[u8]), String> {
+        if packet.len() < 3 {
+            return Err("Packet too short".to_string());
         }
 
         let command_id = packet[1];
-        let received_crc = *packet.last()?;
-        let payload = &packet[1..packet.len() - 1];
-        let calculated_crc = CRC8_AUTOSAR.checksum(payload);
+        let received_crc = *packet.last().ok_or("Missing CRC")?;
+
+        let id = [packet[0], packet[1]];
+        let payload = &packet[2..packet.len() - 1];
+        let calculated_crc = Self::checksum(&id, payload);
 
         if calculated_crc != received_crc {
-            return None;
+            return Err(format!(
+                "Invalid CRC: expected {calculated_crc}, got {received_crc}"
+            ));
         }
 
         let command = match command_id {
@@ -85,10 +91,76 @@ impl Command {
             0x05 => Command::SetDischarge,
             0x06 => Command::SetStandBy,
             0x07 => Command::RequestCompletion,
-            _ => return None,
+            _ => return Err(format!("Unknown command ID: {command_id}")),
         };
 
-        Some((command, &packet[2..packet.len() - 1]))
+        Ok((command, payload))
+    }
+    pub fn parse_ping_payload(&self, payload: &[u8]) -> Result<PingPayload, String> {
+        if *self != Command::Ping {
+            return Err("parse_ping_payload called on wrong command".into());
+        }
+        if payload.len() != 1 {
+            return Err("Invalid Ping payload length".into());
+        }
+        Ok(PingPayload {
+            bench_status: payload[0],
+        })
+    }
+
+    pub fn parse_assign_id(&self, payload: &[u8]) -> Result<u8, String> {
+        if *self != Command::AssignId {
+            return Err("parse_assign_id called on wrong command".into());
+        }
+        if payload.len() != 1 {
+            return Err("Invalid AssignId payload length".into());
+        }
+        Ok(payload[0])
+    }
+
+    pub fn parse_request_data(&self, payload: &[u8]) -> Result<BatteryLog, String> {
+        if *self != Command::RequestData {
+            return Err("parse_request_data called on wrong command".into());
+        }
+        if payload.len() != 11 {
+            return Err("Invalid RequestData payload length".into());
+        }
+
+        let battery_temperature = i16::from_be_bytes([payload[0], payload[1]]) as f32 / 100.0;
+        let bench_temperature = i16::from_be_bytes([payload[2], payload[3]]) as f32 / 100.0;
+        let load_temperature = i16::from_be_bytes([payload[4], payload[5]]) as f32 / 100.0;
+        let voltage = i16::from_be_bytes([payload[6], payload[7]]) as i32;
+        let current = i16::from_be_bytes([payload[8], payload[9]]) as i32;
+
+        Ok(BatteryLog {
+            record_id: None,
+            id: 0, //FIXME:
+            port: String::new(),
+            temperature: bench_temperature as i32,
+            battery_temperature: battery_temperature as i32,
+            electronic_load_temperature: load_temperature as i32,
+            voltage,
+            current,
+            state: String::new(),
+            status: String::new(),
+            start_date: None,
+            end_date: None,
+            test_id: 0,
+        })
+    }
+
+    pub fn parse_completion(&self, payload: &[u8]) -> Result<AnnounceCompletionPayload, String> {
+        if *self != Command::RequestCompletion {
+            return Err("parse_completion called on wrong command".into());
+        }
+        if payload.len() != 1 {
+            return Err("Invalid Completion payload length".into());
+        }
+        let flags = payload[0];
+        Ok(AnnounceCompletionPayload {
+            bench_status: flags,
+            experiment_status: flags,
+        })
     }
 }
 
@@ -125,9 +197,14 @@ pub async fn command_request(value: Command, port_num: &str) -> Result<Vec<u8>, 
     println!("Expected Bytes: {}", expected_bytes);
 
     let decoded_data = Command::decode(&encoded_data);
-    if let Some((command, payload)) = decoded_data {
-        println!("Command: {:?}", command);
-        println!("Payload: [{}]", format_hex(payload));
+    match decoded_data {
+        Ok((command, payload)) => {
+            println!("Command: {:?}", command);
+            println!("Payload: [{}]", format_hex(payload));
+        }
+        Err(err) => {
+            eprintln!("Decode error: {}", err);
+        }
     }
 
     let mut response = vec![0u8; expected_bytes];
@@ -151,7 +228,12 @@ pub async fn command_request(value: Command, port_num: &str) -> Result<Vec<u8>, 
     }
 
     dbg!(&response);
-    Ok(response)
+
+    if response.len() < 3 || response[0] != DELIMITER {
+        Err("invalid response".to_string())
+    } else {
+        Ok(response)
+    }
 }
 
 fn format_hex(bytes: &[u8]) -> String {
@@ -216,7 +298,23 @@ mod tests {
     }
 
     #[test]
-    fn test_decode() {}
+    fn test_decode() {
+        let cmd = Command::Ping;
+        let pld = &[0x01];
+        let packet = &cmd.encode(pld);
+        let (command, payload) = Command::decode(packet).expect("decode failed");
+
+        assert_eq!(command.id(), cmd.id());
+        assert_eq!(payload, pld);
+
+        let cmd = Command::RequestData;
+        let pld = &[0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01];
+        let packet = &cmd.encode(pld);
+        let (command, payload) = Command::decode(packet).expect("decode failed");
+
+        assert_eq!(command.id(), cmd.id());
+        assert_eq!(payload, pld);
+    }
 
     #[test]
     fn test_decode_invalid_checksum() {}
