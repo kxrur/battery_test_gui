@@ -23,6 +23,19 @@ pub enum Command {
     RequestCompletion = 0x07,
 }
 
+impl Command {
+    fn id(&self) -> u8 {
+        *self as u8
+    }
+    fn response_lenght(&self) -> usize {
+        match self {
+            Command::RequestData => 14,
+            Command::RequestCompletion => 5,
+            _ => 4,
+        }
+    }
+}
+
 #[derive(Debug)]
 struct PingPayload {
     bench_status: u8,
@@ -34,48 +47,44 @@ struct AnnounceCompletionPayload {
     experiment_status: u8,
 }
 
-impl Command {
-    fn id(&self) -> [u8; 2] {
-        [DELIMITER, *self as u8]
-    }
+#[derive(Debug, PartialEq, Eq, Clone)]
+pub struct BatteryCommand {
+    command: Command,
+    battery_id: u8,
+    payload: Vec<u8>,
+}
 
-    fn response_lenght(&self) -> usize {
-        match self {
-            Command::RequestData => 13,
-            Command::Ping => 4,
-            Command::AssignId => 4,
-            Command::RequestCompletion => 4,
-            _ => 3,
-        }
-    }
-
-    fn checksum(id: &[u8], payload: &[u8]) -> u8 {
+impl BatteryCommand {
+    fn checksum(buffer: &[u8]) -> u8 {
         let mut digest = CRC8_AUTOSAR.digest();
-        digest.update(id);
-        digest.update(payload);
+        digest.update(buffer);
         digest.finalize()
     }
 
-    fn encode(&self, payload: &[u8]) -> Vec<u8> {
-        let id = self.id();
-        let mut buffer = Vec::with_capacity(id.len() + payload.len() + 1);
-        buffer.extend_from_slice(&id);
-        buffer.extend_from_slice(payload);
-        buffer.push(Self::checksum(&id, payload));
+    fn encode(&self) -> Vec<u8> {
+        let command = self.command;
+        let mut buffer = Vec::with_capacity(command.response_lenght());
+
+        buffer.push(DELIMITER);
+        buffer.push(command.id());
+        buffer.push(self.battery_id);
+        buffer.extend_from_slice(&self.payload);
+        buffer.push(Self::checksum(&buffer));
+
         buffer
     }
 
-    pub fn decode(packet: &[u8]) -> Result<(Command, &[u8]), String> {
+    pub fn decode(packet: &[u8]) -> Result<BatteryCommand, String> {
         if packet.len() < 3 {
             return Err("Packet too short".to_string());
         }
 
         let command_id = packet[1];
-        let received_crc = *packet.last().ok_or("Missing CRC")?;
+        let battery_id = packet[2];
+        let payload = &packet[3..packet.len() - 1];
 
-        let id = [packet[0], packet[1]];
-        let payload = &packet[2..packet.len() - 1];
-        let calculated_crc = Self::checksum(&id, payload);
+        let received_crc = *packet.last().ok_or("Missing CRC")?;
+        let calculated_crc = Self::checksum(&packet[0..packet.len() - 1]);
 
         if calculated_crc != received_crc {
             return Err(format!(
@@ -94,10 +103,15 @@ impl Command {
             _ => return Err(format!("Unknown command ID: {command_id}")),
         };
 
-        Ok((command, payload))
+        Ok(BatteryCommand {
+            command: command,
+            battery_id: battery_id,
+            payload: payload.to_vec(),
+        })
     }
+
     pub fn parse_ping_payload(&self, payload: &[u8]) -> Result<PingPayload, String> {
-        if *self != Command::Ping {
+        if self.command != Command::Ping {
             return Err("parse_ping_payload called on wrong command".into());
         }
         if payload.len() != 1 {
@@ -109,7 +123,7 @@ impl Command {
     }
 
     pub fn parse_assign_id(&self, payload: &[u8]) -> Result<u8, String> {
-        if *self != Command::AssignId {
+        if self.command != Command::AssignId {
             return Err("parse_assign_id called on wrong command".into());
         }
         if payload.len() != 1 {
@@ -119,7 +133,7 @@ impl Command {
     }
 
     pub fn parse_request_data(&self, payload: &[u8]) -> Result<BatteryLog, String> {
-        if *self != Command::RequestData {
+        if self.command != Command::RequestData {
             return Err("parse_request_data called on wrong command".into());
         }
         if payload.len() != 11 {
@@ -150,7 +164,7 @@ impl Command {
     }
 
     pub fn parse_completion(&self, payload: &[u8]) -> Result<AnnounceCompletionPayload, String> {
-        if *self != Command::RequestCompletion {
+        if self.command != Command::RequestCompletion {
             return Err("parse_completion called on wrong command".into());
         }
         if payload.len() != 1 {
@@ -189,18 +203,24 @@ pub fn detect_serial_ports() -> Result<Vec<String>, String> {
 
 #[tauri::command]
 #[specta::specta]
-pub async fn command_request(value: Command, port_num: &str) -> Result<Vec<u8>, String> {
-    let encoded_data = value.encode(&[0x3B]);
+pub async fn command_request(command: Command, port_num: &str) -> Result<Vec<u8>, String> {
+    let battery_cmd = BatteryCommand {
+        command: command,
+        battery_id: 0x02,
+        payload: vec![0x3B],
+    };
+    let encoded_data = battery_cmd.encode();
     println!("Encoded: [{}]", format_hex(&encoded_data));
 
-    let expected_bytes = value.response_lenght();
+    let expected_bytes = command.response_lenght();
     println!("Expected Bytes: {}", expected_bytes);
 
-    let decoded_data = Command::decode(&encoded_data);
+    let decoded_data = BatteryCommand::decode(&encoded_data);
     match decoded_data {
-        Ok((command, payload)) => {
-            println!("Command: {:?}", command);
-            println!("Payload: [{}]", format_hex(payload));
+        Ok(decoded_battery_cmd) => {
+            println!("Command: {:?}", decoded_battery_cmd.command);
+            println!("Battery ID: {:?}", decoded_battery_cmd.battery_id);
+            println!("Payload: [{}]", format_hex(&decoded_battery_cmd.payload));
         }
         Err(err) => {
             eprintln!("Decode error: {}", err);
@@ -281,15 +301,20 @@ mod tests {
 
     #[test]
     fn test_encode() {
-        let data = &[0x12, 0x34, 0x56];
-        let cmd: Command = { Command::Ping };
-        let encoded_cmd = cmd.encode(data);
+        let battery_cmd = BatteryCommand {
+            battery_id: 0x23,
+            command: Command::Ping,
+            payload: vec![0x12, 0x34, 0x56],
+        };
+        let encoded_cmd = battery_cmd.encode();
 
         let mut expected = Vec::new();
-        expected.extend_from_slice(&cmd.id());
-        expected.extend_from_slice(data);
+        expected.push(DELIMITER);
+        expected.push(battery_cmd.command.id());
+        expected.push(battery_cmd.battery_id);
+        expected.extend_from_slice(&battery_cmd.payload);
         // use https://crccalc.com to compute the expected values
-        expected.push(0x17);
+        expected.push(0xB3);
 
         println!("left : {:02X?}", encoded_cmd);
         println!("right: {:02X?}", expected);
@@ -299,21 +324,27 @@ mod tests {
 
     #[test]
     fn test_decode() {
-        let cmd = Command::Ping;
-        let pld = &[0x01];
-        let packet = &cmd.encode(pld);
-        let (command, payload) = Command::decode(packet).expect("decode failed");
+        let battery_cmd = BatteryCommand {
+            command: Command::Ping,
+            battery_id: 0x23,
+            payload: vec![0x01],
+        };
 
-        assert_eq!(command.id(), cmd.id());
-        assert_eq!(payload, pld);
+        let encoded_cmd = battery_cmd.encode();
+        let decoded_battery_cmd = BatteryCommand::decode(&encoded_cmd).expect("decode failed");
 
-        let cmd = Command::RequestData;
-        let pld = &[0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01];
-        let packet = &cmd.encode(pld);
-        let (command, payload) = Command::decode(packet).expect("decode failed");
+        assert_eq!(battery_cmd, decoded_battery_cmd);
 
-        assert_eq!(command.id(), cmd.id());
-        assert_eq!(payload, pld);
+        let battery_cmd2 = BatteryCommand {
+            command: Command::RequestData,
+            battery_id: 0x23,
+            payload: vec![0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01],
+        };
+
+        let encoded_cmd2 = battery_cmd2.encode();
+        let decoded_battery_cmd2 = BatteryCommand::decode(&encoded_cmd2).expect("decode failed");
+
+        assert_eq!(battery_cmd2, decoded_battery_cmd2);
     }
 
     #[test]
