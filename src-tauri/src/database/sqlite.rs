@@ -154,6 +154,7 @@ pub fn init_database(app_handle: &tauri::AppHandle) -> Result<(), DatabaseError>
         .map_err(DatabaseError::AppDataDir)?
         .join("battery_logs.db");
     let db_path_str = db_path.to_str().ok_or(DatabaseError::PathConversion)?;
+    dbg!(db_path_str);
 
     let state = app_handle.state::<Mutex<AppState>>();
 

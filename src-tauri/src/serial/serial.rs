@@ -141,8 +141,9 @@ impl BatteryCommand {
         }
 
         let battery_temperature = i16::from_be_bytes([payload[0], payload[1]]) as f32 / 100.0;
-        let bench_temperature = i16::from_be_bytes([payload[2], payload[3]]) as f32 / 100.0;
-        let load_temperature = i16::from_be_bytes([payload[4], payload[5]]) as f32 / 100.0;
+        let bench_temperature_1 = i16::from_be_bytes([payload[2], payload[3]]) as f32 / 100.0;
+        let bench_temperature_2 = i16::from_be_bytes([payload[4], payload[5]]) as f32 / 100.0;
+        let load = i16::from_be_bytes([payload[6], payload[7]]) as i32;
         let voltage = i16::from_be_bytes([payload[6], payload[7]]) as i32;
         let current = i16::from_be_bytes([payload[8], payload[9]]) as i32;
 
@@ -150,9 +151,10 @@ impl BatteryCommand {
             record_id: None,
             id: 0, //FIXME:
             port: String::new(),
-            temperature: bench_temperature as i32,
             battery_temperature: battery_temperature as i32,
-            electronic_load_temperature: load_temperature as i32,
+            bench_temperature_1: bench_temperature_1 as i32,
+            bench_temperature_2: bench_temperature_2 as i32,
+            load: load,
             voltage,
             current,
             state: String::new(),
