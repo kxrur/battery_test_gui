@@ -45,9 +45,10 @@ const handleSubmit = async () => {
       record_id: null,
       id: formData.value.id,
       port: formData.value.port,
-      temperature: formData.value.temperature,
+      bench_temperature_mosfet: formData.value.temperature,
+      bench_temperature_resistor: formData.value.temperature + 10,
       battery_temperature: formData.value.battery_temperature,
-      electronic_load_temperature: formData.value.electronic_load_temperature,
+      load: formData.value.electronic_load_temperature,
       voltage: formData.value.voltage,
       current: formData.value.current,
       state: formData.value.state,
@@ -87,13 +88,7 @@ const handleSubmit = async () => {
     <form @submit.prevent="handleSubmit" class="space-y-4">
       <div>
         <Label for="id">Battery ID</Label>
-        <Input
-          id="id"
-          v-model.number="formData.id"
-          type="number"
-          placeholder="Enter battery ID"
-          required
-        />
+        <Input id="id" v-model.number="formData.id" type="number" placeholder="Enter battery ID" required />
       </div>
 
       <div>
@@ -113,66 +108,32 @@ const handleSubmit = async () => {
       <div class="grid grid-cols-2 gap-4">
         <div>
           <Label for="temperature">Temperature (°C)</Label>
-          <Input
-            id="temperature"
-            v-model.number="formData.temperature"
-            type="number"
-            step="0.1"
-            placeholder="0.0"
-            required
-          />
+          <Input id="temperature" v-model.number="formData.temperature" type="number" step="0.1" placeholder="0.0"
+            required />
         </div>
 
         <div>
           <Label for="battery_temperature">Battery Temp (°C)</Label>
-          <Input
-            id="battery_temperature"
-            v-model.number="formData.battery_temperature"
-            type="number"
-            step="0.1"
-            placeholder="0.0"
-            required
-          />
+          <Input id="battery_temperature" v-model.number="formData.battery_temperature" type="number" step="0.1"
+            placeholder="0.0" required />
         </div>
       </div>
 
       <div>
-        <Label for="electronic_load_temperature"
-          >Electronic Load Temp (°C)</Label
-        >
-        <Input
-          id="electronic_load_temperature"
-          v-model.number="formData.electronic_load_temperature"
-          type="number"
-          step="0.1"
-          placeholder="0.0"
-          required
-        />
+        <Label for="electronic_load_temperature">Electronic Load Temp (°C)</Label>
+        <Input id="electronic_load_temperature" v-model.number="formData.electronic_load_temperature" type="number"
+          step="0.1" placeholder="0.0" required />
       </div>
 
       <div class="grid grid-cols-2 gap-4">
         <div>
           <Label for="voltage">Voltage (V)</Label>
-          <Input
-            id="voltage"
-            v-model.number="formData.voltage"
-            type="number"
-            step="0.01"
-            placeholder="0.00"
-            required
-          />
+          <Input id="voltage" v-model.number="formData.voltage" type="number" step="0.01" placeholder="0.00" required />
         </div>
 
         <div>
           <Label for="current">Current (A)</Label>
-          <Input
-            id="current"
-            v-model.number="formData.current"
-            type="number"
-            step="0.01"
-            placeholder="0.00"
-            required
-          />
+          <Input id="current" v-model.number="formData.current" type="number" step="0.01" placeholder="0.00" required />
         </div>
       </div>
 
@@ -198,11 +159,7 @@ const handleSubmit = async () => {
               <SelectValue placeholder="Select status" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem
-                v-for="status in statuses"
-                :key="status"
-                :value="status"
-              >
+              <SelectItem v-for="status in statuses" :key="status" :value="status">
                 {{ status }}
               </SelectItem>
             </SelectContent>

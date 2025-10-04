@@ -8,7 +8,6 @@ use crate::database::schema::{battery_logs, tests};
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 use specta::Type;
-
 #[derive(Queryable, Debug, Identifiable, Insertable, Type, Serialize, Deserialize)]
 #[diesel(primary_key(record_id))]
 #[diesel(table_name = battery_logs)]
@@ -17,8 +16,8 @@ pub struct BatteryLog {
     pub id: i32,
     pub port: String,
     pub battery_temperature: i32,
-    pub bench_temperature_1: i32,
-    pub bench_temperature_2: i32,
+    pub bench_temperature_mosfet: i32,
+    pub bench_temperature_resistor: i32,
     pub load: i32,
     pub voltage: i32,
     pub current: i32,

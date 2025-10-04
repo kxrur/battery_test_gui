@@ -73,8 +73,8 @@ The bench has three temperature sensors. One on the battery, one on the bench, a
 
 The frame was built to send the three temperature sensor values as well as the battery voltage and current. The request is sent from the GUI with an empty payload. The payload is then replaced by the actual values and sent back by the hardware. The following is the detailed frame structure.
 
-| 0xB3 | 0x02 | Battery ID | Battery Temp MSB | Battery Temp LSB | Bench Temp MSB | Bench Temp LSB | Bench Temp 2 MSB | Bench Temp 2 LSB | Load MSB | Load LSB | Battery Voltage MSB | Battery Voltage LSB | Bench Current MSB | Bench Current LSB | Checksum |
-| ---- | ---- | ---------- | ---------------- | ---------------- | -------------- | -------------- | ---------------- | ---------------- | -------- | -------- | ------------------- | ------------------- | ----------------- | ----------------- | -------- |
+| 0xB3 | 0x02 | Battery ID | Battery Temp MSB | Battery Temp LSB | Bench Temp Mosfet MSB | Bench Temp Mosfet LSB | Bench Temp Resistor MSB | Bench Temp Resistor LSB | Load MSB | Load LSB | Battery Voltage MSB | Battery Voltage LSB | Bench Current MSB | Bench Current LSB | Checksum |
+| ---- | ---- | ---------- | ---------------- | ---------------- | --------------------- | --------------------- | ----------------------- | ----------------------- | -------- | -------- | ------------------- | ------------------- | ----------------- | ----------------- | -------- |
 
 The temperature values on the hardware side are multiplied by 100. Having received these values, the GUI must divide the number by 100 to obtain the proper temperature. This is called fixed-point representation.
 The load values are reported in ohms.

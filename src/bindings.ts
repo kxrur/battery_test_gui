@@ -92,7 +92,7 @@ async insertTest(test: Test) : Promise<Result<Test, string>> {
 
 /** user-defined types **/
 
-export type BatteryLog = { record_id: number | null; id: number; port: string; temperature: number; battery_temperature: number; electronic_load_temperature: number; voltage: number; current: number; state: string; status: string; start_date: string | null; end_date: string | null; test_id: number }
+export type BatteryLog = { record_id: number | null; id: number; port: string; battery_temperature: number; bench_temperature_mosfet: number; bench_temperature_resistor: number; load: number; voltage: number; current: number; state: string; status: string; start_date: string | null; end_date: string | null; test_id: number }
 export type Command = "Ping" | "AssignId" | "RequestData" | "SetCharge" | "SetDischarge" | "SetStandBy" | "RequestCompletion"
 export type TAURI_CHANNEL<TSend> = null
 export type Test = { test_id: number | null; test_name: string; start_date: string }

@@ -152,8 +152,8 @@ impl BatteryCommand {
             id: 0, //FIXME:
             port: String::new(),
             battery_temperature: battery_temperature as i32,
-            bench_temperature_1: bench_temperature_1 as i32,
-            bench_temperature_2: bench_temperature_2 as i32,
+            bench_temperature_mosfet: bench_temperature_1 as i32,
+            bench_temperature_resistor: bench_temperature_2 as i32,
             load: load,
             voltage,
             current,

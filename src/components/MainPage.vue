@@ -16,9 +16,11 @@ import Charts from "@/components/Charts.vue";
 import { rand } from "@vueuse/core";
 
 const bat: BatteryLog = {
-  battery_temperature: 3,
+  battery_temperature: 22,
   current: 3,
-  electronic_load_temperature: 12,
+  bench_temperature_mosfet: 11,
+  bench_temperature_resistor: 33,
+  load: 40,
   end_date: "end date",
   id: 1,
   port: "Port",
@@ -26,7 +28,6 @@ const bat: BatteryLog = {
   start_date: "start date",
   state: "state",
   status: "status",
-  temperature: 3,
   voltage: 399,
   test_id: 3,
 };
@@ -58,7 +59,7 @@ onMounted(() => {
           batteryLogs.value.push({
             battery_temperature: 30,
             current: 3,
-            electronic_load_temperature: 12,
+            load: 12,
             end_date: "end date",
             id: 1,
             port: "Port",
@@ -66,7 +67,8 @@ onMounted(() => {
             start_date: "start date",
             state: "state",
             status: "status",
-            temperature: temperature,
+            bench_temperature_mosfet: temperature,
+            bench_temperature_resistor: temperature + 10,
             voltage: 399,
             test_id: 3,
           });
@@ -92,8 +94,9 @@ onMounted(() => {
             <TableHead>Voltage</TableHead>
             <TableHead>Current</TableHead>
             <TableHead>Temperature</TableHead>
-            <TableHead>Bench Temperature</TableHead>
-            <TableHead>Electronic Load Temperature</TableHead>
+            <TableHead>Bench Temperature 1</TableHead>
+            <TableHead>Bench Temperature 2</TableHead>
+            <TableHead>Load</TableHead>
             <TableHead>Duration</TableHead>
             <TableHead>Bench State</TableHead>
             <TableHead>Test Status</TableHead>
@@ -108,10 +111,9 @@ onMounted(() => {
             <TableCell>{{ battery.voltage / 100 }}V</TableCell>
             <TableCell>{{ battery.current / 100 }}mA</TableCell>
             <TableCell>{{ battery.battery_temperature / 100 }}C</TableCell>
-            <TableCell>{{ battery.temperature / 100 }}C</TableCell>
-            <TableCell
-              >{{ battery.electronic_load_temperature / 100 }}C</TableCell
-            >
+            <TableCell>{{ battery.bench_temperature_mosfet / 100 }}C</TableCell>
+            <TableCell>{{ battery.bench_temperature_resistor / 100 }}C</TableCell>
+            <TableCell>{{ battery.load }}C</TableCell>
             <TableCell>{{ 3 }} </TableCell>
             <TableCell>
               <Badge variant="secondary"> Standby </Badge>
