@@ -29,7 +29,7 @@ impl Command {
     }
     fn response_lenght(&self) -> usize {
         match self {
-            Command::RequestData => 14,
+            Command::RequestData => 16,
             Command::RequestCompletion => 5,
             _ => 4,
         }

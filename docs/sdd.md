@@ -38,7 +38,7 @@ The frame length varies depending on the Frame ID.
 | -------- | ------------------------- | -------------- |
 | 0x00     | Ping                      | 4              |
 | 0x01     | Assign bench ID           | 4              |
-| 0x02     | Request bench data        | 14             |
+| 0x02     | Request bench data        | 16             |
 | 0x04     | Set bench to standby      | 4              |
 | 0x05     | Set bench to discharge    | 4              |
 | 0x06     | Set bench to charge       | 4              |
@@ -73,22 +73,23 @@ The bench has three temperature sensors. One on the battery, one on the bench, a
 
 The frame was built to send the three temperature sensor values as well as the battery voltage and current. The request is sent from the GUI with an empty payload. The payload is then replaced by the actual values and sent back by the hardware. The following is the detailed frame structure.
 
-| 0xB3 | 0x02 | Battery ID | Battery Temp MSB | Battery Temp LSB | Bench Temp MSB | Bench Temp LSB | Load MSB | Load LSB | Battery Voltage MSB | Battery Voltage LSB | Bench Current MSB | Bench Current LSB | Checksum |
-| ---- | ---- | ---------- | ---------------- | ---------------- | -------------- | -------------- | -------- | -------- | ------------------- | ------------------- | ----------------- | ----------------- | -------- |
+| 0xB3 | 0x02 | Battery ID | Battery Temp MSB | Battery Temp LSB | Bench Temp MSB | Bench Temp LSB | Bench Temp 2 MSB | Bench Temp 2 LSB | Load MSB | Load LSB | Battery Voltage MSB | Battery Voltage LSB | Bench Current MSB | Bench Current LSB | Checksum |
+| ---- | ---- | ---------- | ---------------- | ---------------- | -------------- | -------------- | ---------------- | ---------------- | -------- | -------- | ------------------- | ------------------- | ----------------- | ----------------- | -------- |
 
 The temperature values on the hardware side are multiplied by 100. Having received these values, the GUI must divide the number by 100 to obtain the proper temperature. This is called fixed-point representation.
+The load values are reported in ohms.
 
 An example with battery id: 0x23 would then be:
 
 First the GUI requests the temperature
 
-| 0xB3 | 0x02 | 0x23 | 0x00 | 0x00 | 0x00 | 0x00 | 0x00 | 0x00 | 0x00 | 0x00 | 0x00 | 0x00 | Checksum |
-| ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | -------- |
+| 0xB3 | 0x02 | 0x23 | 0x00 | 0x00 | 0x00 | 0x00 | 0x00 | 0x00 | 0x00 | 0x00 | 0x00 | 0x00 | 0x00 | 0x00 | Checksum |
+| ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | -------- |
 
 The hardware then replies
 
-| 0xB3 | 0x02 | 0x23 | 0x07 | 0xE4 | 0x07 | 0xE4 | 0x07 | 0xE4 | 0x00 | 0x00 | 0x00 | 0x00 | Checksum |
-| ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | -------- |
+| 0xB3 | 0x02 | 0x23 | 0x07 | 0xE4 | 0x07 | 0xE4 | 0x07 | 0xE4 | 0x07 | 0xE4 | 0x00 | 0x00 | 0x00 | 0x00 | Checksum |
+| ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | -------- |
 
 The decimal value for each of these temperatures would then be `2020` which can be decoded to mean a temperature of `20.2C`. As of this time the voltage and current is still being figured out and therefore the example does not include that value.
 
