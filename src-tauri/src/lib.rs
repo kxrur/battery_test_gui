@@ -25,7 +25,7 @@ use crate::{
         },
     },
     serial::{
-        pilot::{assign_id, data_request},
+        pilot::{assign_id, data_request, set_state},
         serial::{command_request, detect_serial_ports},
     },
     state::AppState,
@@ -76,7 +76,8 @@ pub fn run() {
         delete_test,
         insert_new_test,
         data_request,
-        assign_id
+        assign_id,
+        set_state
     ]);
 
     #[cfg(debug_assertions)] // <- Only export on non-release builds

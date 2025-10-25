@@ -105,15 +105,76 @@ impl Bench {
 
 #[tauri::command]
 #[specta::specta]
+pub fn set_state(
+    bench: Bench,
+    battery: Battery,
+    new_state: BatteryState,
+) -> Result<String, String> {
+    let command = match new_state {
+        BatteryState::Standby => Command::SetStandBy,
+        BatteryState::Charge => Command::SetCharge,
+        BatteryState::Discharge => Command::SetDischarge,
+    };
+
+    let battery_cmd = BatteryCommand {
+        command: command,
+        battery_id: battery.id,
+        payload: vec![],
+    };
+    let encoded_data = battery_cmd.encode();
+
+    let mut response = vec![0u8; command.response_lenght()];
+
+    let mut port = serialport::new(bench.port, 9600)
+        .timeout(Duration::from_millis(100))
+        .open()
+        .map_err(|e| e.to_string())?;
+
+    port.write_all(&encoded_data).map_err(|e| e.to_string())?;
+
+    loop {
+        match port.read_exact(&mut response) {
+            Ok(_) => break,
+            Err(e) if e.kind() == std::io::ErrorKind::TimedOut => {
+                println!("State change command not ready");
+                thread::sleep(Duration::from_millis(333));
+            }
+            Err(e) => return Err(e.to_string()),
+        }
+    }
+
+    dbg!(&response);
+
+    match BatteryCommand::decode(&response) {
+        Ok(decoded_response) => {
+            // Check if the response command matches what we sent
+            if decoded_response.command == command && decoded_response.battery_id == battery.id {
+                Ok(format!(
+                    "Battery {} state successfully changed to {:?}",
+                    battery.id, new_state
+                ))
+            } else {
+                Err(format!(
+                    "Unexpected response: got {:?} for battery {}, expected {:?} for battery {}",
+                    decoded_response.command, decoded_response.battery_id, command, battery.id
+                ))
+            }
+        }
+        Err(error) => Err(error),
+    }
+}
+
+#[tauri::command]
+#[specta::specta]
 pub fn assign_id(bench: Bench) -> Result<u8, String> {
     let command = Command::AssignId;
     let mut battery_id: u8 = 0;
 
     // FIXME: potentially infinite loop
-    while (bench
+    while bench
         .batteries
         .iter()
-        .any(|battery| battery.id == battery_id))
+        .any(|battery| battery.id == battery_id)
     {
         if battery_id == 255 {
             battery_id = 0;
