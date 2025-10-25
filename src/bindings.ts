@@ -95,6 +95,22 @@ async insertNewTest() : Promise<Result<Test, string>> {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
 }
+},
+async dataRequest(bench: Bench, battery: Battery) : Promise<Result<BatteryLog, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("data_request", { bench, battery }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async assignId(bench: Bench) : Promise<Result<number, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("assign_id", { bench }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
 }
 }
 
@@ -108,7 +124,10 @@ async insertNewTest() : Promise<Result<Test, string>> {
 
 /** user-defined types **/
 
+export type Battery = { id: number; state: BatteryState }
 export type BatteryLog = { record_id: number | null; id: number; port: string; battery_temperature: number; bench_temperature_mosfet: number; bench_temperature_resistor: number; load: number; voltage: number; current: number; state: string; status: string; start_date: string | null; end_date: string | null; test_id: number }
+export type BatteryState = "Standby" | "Charge" | "Discharge"
+export type Bench = { batteries: Battery[]; port: string }
 export type Command = "Ping" | "AssignId" | "RequestData" | "SetCharge" | "SetDischarge" | "SetStandBy" | "RequestCompletion"
 export type TAURI_CHANNEL<TSend> = null
 export type Test = { test_id: number | null; test_name: string; start_date: string }

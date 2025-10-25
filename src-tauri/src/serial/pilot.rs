@@ -5,7 +5,8 @@ use std::{
 };
 
 use chrono::Utc;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
+use specta::Type;
 use tauri::{ipc::Channel, State};
 
 use crate::{
@@ -13,7 +14,7 @@ use crate::{
     serial::serial::{BatteryCommand, Command},
 };
 
-#[derive(Debug, Default, Serialize, Clone)]
+#[derive(Debug, Default, Serialize, Deserialize, Clone, Type)]
 pub enum BatteryState {
     #[default]
     Standby,
@@ -21,13 +22,13 @@ pub enum BatteryState {
     Discharge,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Type, Serialize, Deserialize)]
 pub struct Battery {
     id: u8,
     state: BatteryState,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Type, Serialize, Deserialize)]
 pub struct Bench {
     batteries: Vec<Battery>,
     port: String,
@@ -70,7 +71,7 @@ impl Bench {
 
         for battery in &self.batteries {
             // request data
-            match data_request(self.clone(), battery) {
+            match data_request(self.clone(), battery.clone()) {
                 Ok(data) => {
                     sqlite::insert_battery_log(state.clone(), data.clone());
                     // pass to channel
@@ -102,6 +103,8 @@ impl Bench {
     }
 }
 
+#[tauri::command]
+#[specta::specta]
 pub fn assign_id(bench: Bench) -> Result<u8, String> {
     let command = Command::AssignId;
     let mut battery_id: u8 = 0;
@@ -153,7 +156,9 @@ pub fn assign_id(bench: Bench) -> Result<u8, String> {
     }
 }
 
-pub fn data_request(bench: Bench, battery: &Battery) -> Result<BatteryLog, String> {
+#[tauri::command]
+#[specta::specta]
+pub fn data_request(bench: Bench, battery: Battery) -> Result<BatteryLog, String> {
     let command = Command::RequestData;
     let battery_cmd = BatteryCommand {
         command: command,

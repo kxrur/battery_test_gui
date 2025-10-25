@@ -24,7 +24,10 @@ use crate::{
             insert_battery_log, insert_new_test, insert_test,
         },
     },
-    serial::serial::{command_request, detect_serial_ports},
+    serial::{
+        pilot::{assign_id, data_request},
+        serial::{command_request, detect_serial_ports},
+    },
     state::AppState,
 };
 
@@ -71,7 +74,9 @@ pub fn run() {
         get_battery_logs_for_test,
         insert_test,
         delete_test,
-        insert_new_test
+        insert_new_test,
+        data_request,
+        assign_id
     ]);
 
     #[cfg(debug_assertions)] // <- Only export on non-release builds
