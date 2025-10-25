@@ -16,6 +16,8 @@ import Charts from "@/components/Charts.vue";
 import TestSelectorTabs from "@/components/TestSelectorTabs.vue";
 import { rand } from "@vueuse/core";
 import { Button } from "./ui/button";
+import Card from "./ui/card/Card.vue";
+import CardContent from "./ui/card/CardContent.vue";
 
 const bat: BatteryLog = {
   battery_temperature: 22,
@@ -46,14 +48,16 @@ onEvent.onmessage = (batteryLog) => {
 
 const batteryLogs = ref<BatteryLog[]>();
 
-const testSelectorTabs = ref<typeof TestSelectorTabs>();
 const tests = ref<Test[]>();
 const debugRef = ref<any>();
 
-const handleTabClick = () => {
-  const selectedTestId = testSelectorTabs.value?.selectedTest.test_id;
-  retrieveLogsFor(selectedTestId);
+const handleTestSelected = (test: Test) => {
+  console.log('Test selected:', test);
+  if (test.test_id) {
+    retrieveLogsFor(test.test_id);
+  }
 };
+
 function retrieveLogsFor(testId: number) {
   commands.getBatteryLogsForTest(testId)
     .then((result) => {
@@ -83,18 +87,20 @@ function retrieveAllTests() {
 }
 onMounted(() => {
   retrieveAllTests();
-  tests.value = [{ test_id: 1, test_name: "test", start_date: "date" }, { test_id: 2, test_name: "test", start_date: "date" }];
 });
 </script>
 
 <template>
-  <section class="m-10 flex flex-col gap-10">
+  <section class="m-10 flex flex-col gap-10 w-fit max-w-full">
     <!--Top Section-->
-    <TestSelectorTabs ref="testSelectorTabs" v-if="tests != undefined" :tests="tests" @click="handleTabClick">
-    </TestSelectorTabs>
+    <Card class="px-4 py-4 w-10/12">
+      <TestSelectorTabs v-if="tests != undefined" :tests="tests" @test-selected="handleTestSelected"
+        @test-deleted="retrieveAllTests" @test-added="retrieveAllTests">
+      </TestSelectorTabs>
+    </Card>
     <section>
       <h1 class="text-2xl font-bold">Batteries Connected</h1>
-      <Table>
+      <Table class="min-w-full">
         <TableHeader>
           <TableRow>
             <TableHead>Battery Port</TableHead>
@@ -105,8 +111,8 @@ onMounted(() => {
             <TableHead>Bench Temperature 2</TableHead>
             <TableHead>Load</TableHead>
             <TableHead>Duration</TableHead>
-            <TableHead>Bench State</TableHead>
-            <TableHead>Test Status</TableHead>
+            <!-- <TableHead>Bench State</TableHead>
+            <TableHead>Test Status</TableHead> -->
             <TableHead></TableHead>
           </TableRow>
         </TableHeader>
@@ -122,12 +128,12 @@ onMounted(() => {
             <TableCell>{{ battery.bench_temperature_resistor / 100 }}C</TableCell>
             <TableCell>{{ battery.load }}C</TableCell>
             <TableCell>{{ 3 }} </TableCell>
-            <TableCell>
+            <!-- <TableCell>
               <Badge variant="secondary"> Standby </Badge>
             </TableCell>
             <TableCell>
               <Badge variant="secondary"> Standby </Badge>
-            </TableCell>
+            </TableCell> -->
             <TableCell class="text-right">
               <BeginTest :onEvent="onEvent"></BeginTest>
             </TableCell>

@@ -8,6 +8,7 @@ use diesel_migrations::{embed_migrations, EmbeddedMigrations, MigrationHarness};
 use tauri::{Manager, State};
 
 use crate::database::models::{BatteryLog, Test};
+use crate::serial::pilot::get_current_time;
 use crate::state::AppState;
 
 pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!("./migrations");
@@ -95,6 +96,56 @@ pub fn insert_test(statee: State<'_, Mutex<AppState>>, test: Test) -> Result<Tes
         .map_err(|e| e.to_string())?;
 
     Ok(inserted)
+}
+
+#[tauri::command]
+#[specta::specta]
+pub fn insert_new_test(statee: State<'_, Mutex<AppState>>) -> Result<Test, String> {
+    let current_time = get_current_time();
+    let test_count = get_all_tests(statee.clone())?.len();
+    let name = format!("Test {}", test_count + 1);
+
+    let test = Test {
+        test_id: None,
+        test_name: name,
+        start_date: current_time,
+    };
+
+    insert_test(statee, test)
+}
+
+#[tauri::command]
+#[specta::specta]
+pub fn delete_test(state: State<'_, Mutex<AppState>>, target_test_id: i32) -> Result<(), String> {
+    let mut state = state.lock().map_err(|e| e.to_string())?;
+
+    if state.db_connection.is_none() {
+        state.db_connection =
+            Some(establish_connection(&state.db_path).map_err(|e| e.to_string())?);
+    }
+
+    let conn = state.db_connection.as_mut().unwrap();
+
+    {
+        use crate::database::schema::battery_logs::dsl::*;
+        diesel::delete(battery_logs.filter(test_id.eq(target_test_id)))
+            .execute(conn)
+            .map_err(|e| {
+                format!(
+                    "Failed to delete battery logs for test {}: {}",
+                    target_test_id, e
+                )
+            })?;
+    }
+
+    {
+        use crate::database::schema::tests::dsl::*;
+        diesel::delete(tests.filter(test_id.eq(target_test_id)))
+            .execute(conn)
+            .map_err(|e| format!("Failed to delete test {}: {}", target_test_id, e))?;
+    }
+
+    Ok(())
 }
 
 #[tauri::command]
