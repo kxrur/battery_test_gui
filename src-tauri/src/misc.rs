@@ -28,26 +28,28 @@ pub async fn populate_fake_data(state: State<'_, Mutex<AppState>>) -> Result<(),
 
         let inserted_test = insert_test(state.clone(), test)?;
 
-        for i in 0..100 {
-            let now = Utc::now().naive_utc();
-            let log = BatteryLog {
-                record_id: None,
-                id: (test_index * 100 + i) as i32,
-                port: format!("COM{}", rand::rng().random_range(1..=10)),
-                battery_temperature: rand::rng().random_range(25..=50),
-                bench_temperature_mosfet: rand::rng().random_range(20..=40),
-                bench_temperature_resistor: rand::rng().random_range(20..=40),
-                load: rand::rng().random_range(30..=60),
-                voltage: rand::rng().random_range(3000..=4200),
-                current: rand::rng().random_range(100..=1000),
-                state: random_state(),
-                status: random_status(),
-                start_date: Some(now.to_string()),
-                end_date: None,
-                test_id: inserted_test.test_id.unwrap(),
-            };
+        for i in 0..4 {
+            for j in 0..10 {
+                let now = Utc::now().naive_utc();
+                let log = BatteryLog {
+                    record_id: None,
+                    id: (i) as i32,
+                    port: format!("COM{}", rand::rng().random_range(1..=10)),
+                    battery_temperature: rand::rng().random_range(25..=50),
+                    bench_temperature_mosfet: rand::rng().random_range(20..=40),
+                    bench_temperature_resistor: rand::rng().random_range(20..=40),
+                    load: rand::rng().random_range(30..=60),
+                    voltage: rand::rng().random_range(3000..=4200),
+                    current: rand::rng().random_range(100..=1000),
+                    state: random_state(),
+                    status: random_status(),
+                    start_date: Some(now.to_string()),
+                    end_date: None,
+                    test_id: inserted_test.test_id.unwrap(),
+                };
 
-            insert_battery_log(state.clone(), log)?;
+                insert_battery_log(state.clone(), log)?;
+            }
         }
     }
 

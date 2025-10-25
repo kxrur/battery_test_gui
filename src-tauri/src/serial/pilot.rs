@@ -230,7 +230,7 @@ pub fn data_request(bench: Bench, battery: Battery) -> Result<BatteryLog, String
 
     let mut response = vec![0u8; command.response_lenght()];
 
-    let mut port = serialport::new(bench.port, 9600)
+    let mut port = serialport::new(bench.port.clone(), 9600)
         .timeout(Duration::from_millis(100))
         .open()
         .map_err(|e| e.to_string())?;
@@ -251,7 +251,9 @@ pub fn data_request(bench: Bench, battery: Battery) -> Result<BatteryLog, String
     dbg!(&response);
 
     match BatteryCommand::decode(&response) {
-        Ok(decoded_response) => battery_cmd.parse_request_data(&decoded_response.payload),
+        Ok(decoded_response) => {
+            battery_cmd.parse_request_data(&decoded_response.payload, battery.id, bench.port)
+        }
         Err(error) => Err(error),
     }
 }

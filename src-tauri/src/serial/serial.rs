@@ -132,7 +132,12 @@ impl BatteryCommand {
         Ok(payload[3])
     }
 
-    pub fn parse_request_data(&self, payload: &[u8]) -> Result<BatteryLog, String> {
+    pub fn parse_request_data(
+        &self,
+        payload: &[u8],
+        id: u8,
+        port: String,
+    ) -> Result<BatteryLog, String> {
         if self.command != Command::RequestData {
             return Err("parse_request_data called on wrong command".into());
         }
@@ -149,8 +154,8 @@ impl BatteryCommand {
 
         Ok(BatteryLog {
             record_id: None,
-            id: 0, //FIXME:
-            port: String::new(),
+            id: id as i32, //FIXME:
+            port: port,
             battery_temperature: battery_temperature as i32,
             bench_temperature_mosfet: bench_temperature_1 as i32,
             bench_temperature_resistor: bench_temperature_2 as i32,

@@ -7,31 +7,35 @@ const props = defineProps<{
   batteryLogs: BatteryLog[];
 }>();
 
-const open_ports = computed(() =>
-  Array.from(new Set(props.batteryLogs.map((log) => log.port))),
+const batteryIds = computed(() =>
+  Array.from(new Set(props.batteryLogs.map((log) => log.id.toString()))),
 );
 
 function createSeries(metric: keyof BatteryLog) {
   const series: Record<string, number[]> = {};
   const byIndex: { [key: string]: Record<string, number> }[] = [];
 
-  open_ports.value.forEach((port) => {
-    series[port] = [];
+  batteryIds.value.forEach((id) => {
+    series[id] = [];
   });
 
+  console.log("battery log: ", props.batteryLogs)
+
   props.batteryLogs.forEach((log, i) => {
-    if (!series[log.port]) series[log.port] = [];
-    series[log.port].push(log[metric] as number);
+    if (!series[log.id]) series[log.id] = [];
+    series[log.id].push(log[metric] as number);
   });
 
   const length = Math.max(...Object.values(series).map((arr) => arr.length));
   for (let i = 0; i < length; i++) {
     const entry: Record<string, any> = { index: i };
-    for (const port of open_ports.value) {
-      entry[port] = series[port]?.[i] ?? null;
+    for (const id of batteryIds.value) {
+      entry[id] = series[id]?.[i] ?? null;
     }
     byIndex.push(entry);
   }
+
+  console.log(byIndex);
 
   return byIndex;
 }
@@ -49,8 +53,8 @@ const load = computed(() => createSeries("load"));
       <h2 class="text-2xl font-bold">Voltage [V]</h2>
       <h2 class="text-2xl font-bold">Current [mA]</h2>
 
-      <LineChart class="max-h-64" :data="voltages" index="index" :categories="open_ports" />
-      <LineChart class="max-h-64" :data="currents" index="index" :categories="open_ports" />
+      <LineChart class="max-h-64" :data="voltages" index="index" :categories="batteryIds" />
+      <LineChart class="max-h-64" :data="currents" index="index" :categories="batteryIds" />
     </section>
 
     <section class="grid grid-cols-3 gap-5">
@@ -58,9 +62,9 @@ const load = computed(() => createSeries("load"));
       <h2 class="text-2xl font-bold">Bench Temperature MOSFET[C]</h2>
       <h2 class="text-2xl font-bold">Load [Ohm]</h2>
 
-      <LineChart class="max-h-64" :data="battery_temp" index="index" :categories="open_ports" />
-      <LineChart class="max-h-64" :data="bench_temp" index="index" :categories="open_ports" />
-      <LineChart class="max-h-64" :data="load" index="index" :categories="open_ports" />
+      <LineChart class="max-h-64" :data="battery_temp" index="index" :categories="batteryIds" />
+      <LineChart class="max-h-64" :data="bench_temp" index="index" :categories="batteryIds" />
+      <LineChart class="max-h-64" :data="load" index="index" :categories="batteryIds" />
     </section>
   </div>
 </template>
