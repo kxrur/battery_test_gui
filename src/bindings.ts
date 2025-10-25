@@ -87,6 +87,14 @@ async deleteTest(targetTestId: number) : Promise<Result<null, string>> {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
 }
+},
+async insertNewTest() : Promise<Result<Test, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("insert_new_test") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
 }
 }
 

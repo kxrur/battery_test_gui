@@ -16,6 +16,7 @@ const selectedTest = ref<Test>();
 const emit = defineEmits<{
   testSelected: [test: Test]
   testDeleted: []
+  testAdded: []
 }>()
 
 const selectTest = (test: Test) => {
@@ -23,9 +24,32 @@ const selectTest = (test: Test) => {
   emit('testSelected', test);
 }
 
-const addTest = () => {
-  // TODO: Implement add test functionality
-  console.log('Add test clicked');
+const addTest = async () => {
+  try {
+    const result = await commands.insertNewTest();
+
+    if (result.status === "ok") {
+      const newTest = result.data;
+
+      toast("Success!", {
+        description: `Test "${newTest.test_name}" was created successfully.`,
+      });
+
+      emit('testAdded');
+
+      selectedTest.value = newTest;
+      emit('testSelected', newTest);
+    } else {
+      toast("Error creating test", {
+        description: result.error,
+      });
+    }
+
+  } catch (err) {
+    toast("Error creating test", {
+      description: err instanceof Error ? err.message : "Unexpected error occurred.",
+    });
+  }
 }
 
 const deleteTest = async () => {

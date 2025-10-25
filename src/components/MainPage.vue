@@ -95,7 +95,7 @@ onMounted(() => {
     <!--Top Section-->
     <Card class="px-4 py-4 w-10/12">
       <TestSelectorTabs v-if="tests != undefined" :tests="tests" @test-selected="handleTestSelected"
-        @test-deleted="retrieveAllTests">
+        @test-deleted="retrieveAllTests" @test-added="retrieveAllTests">
       </TestSelectorTabs>
     </Card>
     <section>

@@ -21,7 +21,7 @@ use crate::{
         models::BatteryLog,
         sqlite::{
             delete_test, get_all_battery_logs, get_all_tests, get_battery_logs_for_test,
-            insert_battery_log, insert_test,
+            insert_battery_log, insert_new_test, insert_test,
         },
     },
     serial::serial::{command_request, detect_serial_ports},
@@ -70,7 +70,8 @@ pub fn run() {
         get_all_tests,
         get_battery_logs_for_test,
         insert_test,
-        delete_test
+        delete_test,
+        insert_new_test
     ]);
 
     #[cfg(debug_assertions)] // <- Only export on non-release builds

@@ -1,4 +1,4 @@
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, Duration, Utc};
 use serde::Serialize;
 
 use crate::database::models::BatteryLog;
@@ -59,4 +59,8 @@ impl BatteryLog {
     pub fn complete_sequence(&mut self) {
         todo!()
     }
+}
+
+pub fn get_current_time() -> String {
+    Utc::now().to_rfc3339()
 }

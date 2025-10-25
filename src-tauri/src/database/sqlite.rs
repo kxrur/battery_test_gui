@@ -8,6 +8,7 @@ use diesel_migrations::{embed_migrations, EmbeddedMigrations, MigrationHarness};
 use tauri::{Manager, State};
 
 use crate::database::models::{BatteryLog, Test};
+use crate::serial::pilot::get_current_time;
 use crate::state::AppState;
 
 pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!("./migrations");
@@ -95,6 +96,22 @@ pub fn insert_test(statee: State<'_, Mutex<AppState>>, test: Test) -> Result<Tes
         .map_err(|e| e.to_string())?;
 
     Ok(inserted)
+}
+
+#[tauri::command]
+#[specta::specta]
+pub fn insert_new_test(statee: State<'_, Mutex<AppState>>) -> Result<Test, String> {
+    let current_time = get_current_time();
+    let test_count = get_all_tests(statee.clone())?.len();
+    let name = format!("Test {}", test_count + 1);
+
+    let test = Test {
+        test_id: None,
+        test_name: name,
+        start_date: current_time,
+    };
+
+    insert_test(statee, test)
 }
 
 #[tauri::command]
