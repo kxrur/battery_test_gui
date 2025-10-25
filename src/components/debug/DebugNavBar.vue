@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from "vue";
-import { Plus, Download, CloudUpload, CloudDownload, Play, Bolt } from "lucide-vue-next";
+import { Plus, Download, CloudUpload, CloudDownload, Play, Bolt, IdCardLanyard } from "lucide-vue-next";
 
 import {
   Dialog,
@@ -26,6 +26,7 @@ import SendSerial from "./SendSerial.vue";
 import GenerateFakeData from "./GenerateFakeData.vue";
 import BatteryState from "./BatteryState.vue";
 import BatteryData from "./BatteryData.vue";
+import BatteryId from "./BatteryId.vue";
 
 // Define dialog items and associated components
 const dialogItems = [
@@ -52,6 +53,12 @@ const dialogItems = [
     title: "Fake Data",
     icon: CloudUpload,
     component: GenerateFakeData,
+  },
+  {
+    key: "assignId",
+    title: "AssignId",
+    icon: IdCardLanyard,
+    component: BatteryId,
   },
   {
     key: "setState",

@@ -17,7 +17,7 @@
             </Button>
         </div>
 
-        <div class="space-y-2">
+        <div v-if="showBatteryId" class="space-y-2">
             <Label for="battery-id">Battery ID</Label>
             <Input id="battery-id" v-model.number="batteryId" type="number" placeholder="Enter battery ID (0-255)"
                 min="0" max="255" @input="onBatteryIdChange" />
@@ -38,6 +38,13 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select'
+
+// Define props
+const props = withDefaults(defineProps<{
+    showBatteryId?: boolean
+}>(), {
+    showBatteryId: true
+})
 
 const emit = defineEmits<{
     portSelected: [port: string]
