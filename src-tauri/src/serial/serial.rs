@@ -27,7 +27,7 @@ impl Command {
     fn id(&self) -> u8 {
         *self as u8
     }
-    fn response_lenght(&self) -> usize {
+    pub fn response_lenght(&self) -> usize {
         match self {
             Command::RequestData => 16,
             Command::RequestCompletion => 5,
@@ -49,9 +49,9 @@ struct AnnounceCompletionPayload {
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct BatteryCommand {
-    command: Command,
-    battery_id: u8,
-    payload: Vec<u8>,
+    pub command: Command,
+    pub battery_id: u8,
+    pub payload: Vec<u8>,
 }
 
 impl BatteryCommand {
@@ -61,7 +61,7 @@ impl BatteryCommand {
         digest.finalize()
     }
 
-    fn encode(&self) -> Vec<u8> {
+    pub fn encode(&self) -> Vec<u8> {
         let command = self.command;
         let mut buffer = Vec::with_capacity(command.response_lenght());
 
@@ -129,14 +129,14 @@ impl BatteryCommand {
         if payload.len() != 1 {
             return Err("Invalid AssignId payload length".into());
         }
-        Ok(payload[0])
+        Ok(payload[3])
     }
 
     pub fn parse_request_data(&self, payload: &[u8]) -> Result<BatteryLog, String> {
         if self.command != Command::RequestData {
             return Err("parse_request_data called on wrong command".into());
         }
-        if payload.len() != 11 {
+        if payload.len() != 12 {
             return Err("Invalid RequestData payload length".into());
         }
 

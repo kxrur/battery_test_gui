@@ -1,39 +1,39 @@
-use chrono::{DateTime, Duration, Utc};
-use serde::Serialize;
+use std::{
+    sync::{Arc, Mutex},
+    thread,
+    time::Duration,
+};
 
-use crate::database::models::BatteryLog;
+use chrono::Utc;
+use serde::Serialize;
+use tauri::{ipc::Channel, State};
+
+use crate::{
+    database::{models::BatteryLog, sqlite},
+    serial::serial::{BatteryCommand, Command},
+};
 
 #[derive(Debug, Default, Serialize, Clone)]
-pub enum BatteryBenchState {
+pub enum BatteryState {
     #[default]
     Standby,
     Charge,
     Discharge,
 }
 
-#[derive(Debug, Serialize, Clone)]
-pub enum CompletionStatus {
-    Success,
-    Fail,
-    InProgress,
+#[derive(Debug, Clone)]
+pub struct Battery {
+    id: u8,
+    state: BatteryState,
 }
 
-// #[derive(Debug, Serialize, Clone)]
-// pub struct BatteryBench {
-//     pub id: u8,
-//     pub port: String,
-//     pub temperature: u16,
-//     pub battery_temperature: u16,
-//     pub electronic_load_temperature: u16,
-//     pub voltage: u16,
-//     pub current: u16,
-//     pub state: BatteryBenchState,
-//     pub status: CompletionStatus,
-//     pub start_date: DateTime<Utc>,
-//     pub end_date: DateTime<Utc>,
-// }
+#[derive(Debug, Clone)]
+pub struct Bench {
+    batteries: Vec<Battery>,
+    port: String,
+}
 
-impl BatteryLog {
+impl Bench {
     pub fn init_searching() {
         todo!()
 
@@ -46,18 +46,147 @@ impl BatteryLog {
         //pings a newly open port to check if firmware is running on the port
     }
 
-    pub fn start_sequence(&mut self) {
-        todo!()
+    //starts a thread for the thread that pings the bench every sec
+    pub fn start_sequence(
+        &self,
+        state: State<'_, Mutex<crate::state::AppState>>,
+        on_event: Channel<BatteryLog>,
+    ) {
+        let bench = Arc::new(Mutex::new(self.clone()));
+        let state_arc = state.inner().clone();
 
-        //starts a thread for the thread that pings the bench every sec
+        // thread::spawn(move || loop {
+        //     let mut bench_guard = bench.lock().unwrap();
+        //     bench_guard.complete_sequence_step(state.clone(), on_event.clone());
+        // });
     }
 
-    pub fn complete_sequence_step(&mut self) {
-        todo!()
+    pub fn complete_sequence_step(
+        &mut self,
+        state: State<'_, Mutex<crate::state::AppState>>,
+        on_event: Channel<BatteryLog>,
+    ) {
+        let mut bat_count = 0;
+
+        for battery in &self.batteries {
+            // request data
+            match data_request(self.clone(), battery) {
+                Ok(data) => {
+                    sqlite::insert_battery_log(state.clone(), data.clone());
+                    // pass to channel
+                    on_event.send(data).unwrap();
+                }
+                Err(error) => print!("Error while fetching data: {}", error),
+            }
+
+            bat_count += 1;
+        }
+
+        while bat_count < 4 {
+            // ping with new ID
+            match assign_id(self.clone()) {
+                Ok(id) => {
+                    self.batteries.push(Battery {
+                        id: id,
+                        state: BatteryState::Standby,
+                    });
+                    bat_count += 1;
+                }
+                Err(_) => todo!(),
+            }
+        }
     }
 
     pub fn complete_sequence(&mut self) {
         todo!()
+    }
+}
+
+pub fn assign_id(bench: Bench) -> Result<u8, String> {
+    let command = Command::AssignId;
+    let mut battery_id: u8 = 0;
+
+    // FIXME: potentially infinite loop
+    while (bench
+        .batteries
+        .iter()
+        .any(|battery| battery.id == battery_id))
+    {
+        if battery_id == 255 {
+            battery_id = 0;
+        }
+        battery_id += 1;
+    }
+
+    let battery_cmd = BatteryCommand {
+        command: command,
+        battery_id: battery_id,
+        payload: vec![],
+    };
+    let encoded_data = battery_cmd.encode();
+
+    let mut response = vec![0u8; command.response_lenght()];
+
+    let mut port = serialport::new(bench.port, 9600)
+        .timeout(Duration::from_millis(100))
+        .open()
+        .map_err(|e| e.to_string())?;
+
+    port.write_all(&encoded_data).map_err(|e| e.to_string())?;
+
+    loop {
+        match port.read_exact(&mut response) {
+            Ok(_) => break,
+            Err(e) if e.kind() == std::io::ErrorKind::TimedOut => {
+                println!("data was not ready");
+                thread::sleep(Duration::from_millis(333));
+            }
+            Err(e) => return Err(e.to_string()),
+        }
+    }
+
+    dbg!(&response);
+
+    match BatteryCommand::decode(&response) {
+        Ok(decoded_response) => battery_cmd.parse_assign_id(&decoded_response.payload),
+        Err(error) => Err(error),
+    }
+}
+
+pub fn data_request(bench: Bench, battery: &Battery) -> Result<BatteryLog, String> {
+    let command = Command::RequestData;
+    let battery_cmd = BatteryCommand {
+        command: command,
+        battery_id: battery.id,
+        payload: vec![0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    };
+    let encoded_data = battery_cmd.encode();
+
+    let mut response = vec![0u8; command.response_lenght()];
+
+    let mut port = serialport::new(bench.port, 9600)
+        .timeout(Duration::from_millis(100))
+        .open()
+        .map_err(|e| e.to_string())?;
+
+    port.write_all(&encoded_data).map_err(|e| e.to_string())?;
+
+    loop {
+        match port.read_exact(&mut response) {
+            Ok(_) => break,
+            Err(e) if e.kind() == std::io::ErrorKind::TimedOut => {
+                println!("data was not ready");
+                thread::sleep(Duration::from_millis(333));
+            }
+            Err(e) => return Err(e.to_string()),
+        }
+    }
+
+    dbg!(&response);
+
+    match BatteryCommand::decode(&response) {
+        Ok(decoded_response) => battery_cmd.parse_request_data(&decoded_response.payload),
+        Err(error) => Err(error),
     }
 }
 

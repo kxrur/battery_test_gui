@@ -8,7 +8,7 @@ use crate::database::schema::{battery_logs, tests};
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 use specta::Type;
-#[derive(Queryable, Debug, Identifiable, Insertable, Type, Serialize, Deserialize)]
+#[derive(Queryable, Debug, Identifiable, Insertable, Type, Serialize, Deserialize, Clone)]
 #[diesel(primary_key(record_id))]
 #[diesel(table_name = battery_logs)]
 pub struct BatteryLog {
